@@ -89,7 +89,9 @@ void generateValidationData() {
         postNotificationName: kNotificationValidationDataResponse
         object: nil
         userInfo: @{
-            kError: @"No account found"
+            kError: [NSError errorWithDomain: kSuiteName code: 0 userInfo: @{
+                @"Error Reason": @"No account found"
+            }]
         }
     ];
 }
