@@ -9,7 +9,7 @@ void bp_log_impl(NSString* moduleName, NSString* logString) {
         [fileManager createFileAtPath: kLogFilePath contents: nil attributes: nil];
     }
     
-    NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath: kLogFilePath];
+    NSFileHandle* fileHandle = [NSFileHandle fileHandleForWritingAtPath: kLogFilePath];
     [fileHandle seekToEndOfFile];
     [fileHandle writeData: [[NSString stringWithFormat: @"[%@] %@\n", moduleName, [logString stringByReplacingOccurrencesOfString: @"\n" withString: @" "]] dataUsingEncoding: NSUTF8StringEncoding]];
     [fileHandle closeFile];

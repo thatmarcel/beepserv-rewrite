@@ -32,7 +32,7 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
             
             NSError* fileReadingError;
             NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", alternativeStateFilePath]];
-            NSDictionary *serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
+            NSDictionary* serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
             
             if (fileReadingError) {
                 LOG(@"Reading alternative state file failed with error: %@", fileReadingError);
@@ -53,7 +53,7 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
             
             NSError* fileReadingError;
             NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", stateFilePath]];
-            NSDictionary *serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
+            NSDictionary* serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
             
             if (fileReadingError) {
                 LOG(@"Reading state file failed with error: %@", fileReadingError);
@@ -97,9 +97,9 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
     }
     
     - (void) writeToDisk {
-        NSDictionary *serializedState = [self serializeToDictionary];
+        NSDictionary* serializedState = [self serializeToDictionary];
         
-        NSError *writingError;
+        NSError* writingError;
         NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", stateFilePath]];
         [serializedState writeToURL: url error: &writingError];
         
@@ -109,7 +109,7 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
     }
     
     - (void) broadcast {
-        NSDictionary *serializedState = [self serializeToDictionary];
+        NSDictionary* serializedState = [self serializeToDictionary];
             
         [[NSDistributedNotificationCenter defaultCenter]
             postNotificationName: kNotificationUpdateState

@@ -11,7 +11,7 @@
         [NSTimer
             scheduledTimerWithTimeInterval: 5
             repeats: false
-            block: ^(NSTimer *timer) {
+            block: ^(NSTimer* timer) {
                 [BPSocketConnectionManager.sharedInstance startConnection];
             }
         ];

@@ -18,7 +18,7 @@ void bp_log_impl(NSString* moduleName, NSString* logString);
     }
     
     + (void) setShouldShowNotifications:(BOOL)shouldShowNotificationsFromNowOn {
-        NSError *writingError;
+        NSError* writingError;
         NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", kPrefsFilePath]];
         [@{
             kPrefsKeyShouldShowNotifications: [NSNumber numberWithBool: shouldShowNotificationsFromNowOn]

@@ -58,25 +58,25 @@
 void generateValidationData() {
     LOG(@"Trying to generate validation data");
     
-    IDSDAccountController *controller = [%c(IDSDAccountController) sharedInstance];
-    NSArray<IDSDAccount *> *accounts = controller.accounts;
+    IDSDAccountController* controller = [%c(IDSDAccountController) sharedInstance];
+    NSArray<IDSDAccount*>* accounts = controller.accounts;
     
-    for (IDSDAccount *acc in accounts) {
-        LOG(@"Account: %@, registration: %@", acc, acc.registration);
+    for (IDSDAccount* account in accounts) {
+        LOG(@"Account: %@, registration: %@", account, account.registration);
         
-        if (![acc.service.identifier isEqual: @"com.apple.madrid"]) {
+        if (![account.service.identifier isEqual: @"com.apple.madrid"]) {
             continue;
         }
         
-        if (!acc.registration) {
+        if (!account.registration) {
             LOG(@"Account has no registration, activating registration");
-            [acc activateRegistration];
+            [account activateRegistration];
         } else {
             LOG(@"Account has registration");
         }
         
         LOG(@"Re-registering account");
-        [acc reregister];
+        [account reregister];
         
         return;
     }
@@ -97,7 +97,7 @@ void generateValidationData() {
         addObserverForName: kNotificationRequestValidationData
         object: nil
         queue: NSOperationQueue.mainQueue
-        usingBlock: ^(NSNotification *notification)
+        usingBlock: ^(NSNotification* notification)
     {
         generateValidationData();
     }];

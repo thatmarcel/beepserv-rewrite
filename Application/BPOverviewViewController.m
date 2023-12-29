@@ -192,7 +192,7 @@
             addObserverForName: kNotificationUpdateState
             object: nil
             queue: NSOperationQueue.mainQueue
-            usingBlock: ^(NSNotification *notification)
+            usingBlock: ^(NSNotification* notification)
         {
             BPState* currentState = [BPState createFromDictionary: notification.userInfo];
             [self updateWithState: currentState];

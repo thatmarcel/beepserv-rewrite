@@ -25,14 +25,14 @@ BPValidationDataManager* _sharedInstance;
             addObserverForName: kNotificationValidationDataResponse
             object: nil
             queue: NSOperationQueue.mainQueue
-            usingBlock: ^(NSNotification *notification)
+            usingBlock: ^(NSNotification* notification)
         {
-            NSDictionary *userInfo = notification.userInfo;
+            NSDictionary* userInfo = notification.userInfo;
             LOG(@"Received broadcasted validation data response: %@", userInfo);
             
             NSData* validationData = userInfo[kValidationData];
             NSNumber* validationDataExpiryTimestamp = userInfo[kValidationDataExpiryTimestamp];
-            NSError *error = userInfo[kError];
+            NSError* error = userInfo[kError];
             
             [self
                 handleResponseWithValidationData: validationData

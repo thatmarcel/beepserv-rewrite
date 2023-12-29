@@ -5,5 +5,5 @@
     UINavigationController* _overviewNavigationViewController;
     UINavigationController* _logsNavigationViewController;
 }
-    @property (nonatomic, strong) UIWindow *window;
+    @property (nonatomic, strong) UIWindow* window;
 @end

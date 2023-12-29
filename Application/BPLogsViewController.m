@@ -20,7 +20,7 @@
             self.view.backgroundColor = [UIColor whiteColor];
         }
         
-        UIBarButtonItem *clearLogsButtonItem = [[UIBarButtonItem alloc] 
+        UIBarButtonItem* clearLogsButtonItem = [[UIBarButtonItem alloc] 
             initWithTitle: @"Clear logs"                                            
             style: UIBarButtonItemStylePlain 
             target: self 
@@ -50,7 +50,7 @@
         [NSTimer
             scheduledTimerWithTimeInterval: 2
             repeats: true
-            block: ^(NSTimer *timer) {
+            block: ^(NSTimer* timer) {
                 [self readLogsWithCompletion: ^(BOOL hasNewLogs) {
                     if (hasNewLogs) {
                         [self scrollToBottomAnimated: true];
@@ -113,7 +113,7 @@
     }
     
     - (UITableViewCell*) tableView:(UITableView*)tableView cellForRowAtIndexPath:(NSIndexPath*)indexPath {
-        UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier: @"BPLogLineCell"];
+        UITableViewCell* cell = [tableView dequeueReusableCellWithIdentifier: @"BPLogLineCell"];
         
         if (cell == nil) {
             cell = [[UITableViewCell alloc] initWithStyle: UITableViewCellStyleDefault reuseIdentifier: @"BPLogLineCell"];

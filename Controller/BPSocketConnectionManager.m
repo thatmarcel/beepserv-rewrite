@@ -36,7 +36,7 @@ static BPSocketConnectionManager* _sharedInstance;
             addObserverForName: kNotificationRequestStateUpdate
             object: nil
             queue: NSOperationQueue.mainQueue
-            usingBlock: ^(NSNotification *notification)
+            usingBlock: ^(NSNotification* notification)
         {
             [self.currentState broadcast];
         }];
@@ -57,7 +57,7 @@ static BPSocketConnectionManager* _sharedInstance;
             relayURL = relayURL ?: kDefaultRelayURL;
             relayURL = [relayURL stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
             
-            NSURLRequest *request = [NSURLRequest requestWithURL: [NSURL URLWithString: relayURL]];
+            NSURLRequest* request = [NSURLRequest requestWithURL: [NSURL URLWithString: relayURL]];
             
             socket = [[SRWebSocket alloc] initWithURLRequest: request];
             socket.delegate = self;
@@ -92,7 +92,7 @@ static BPSocketConnectionManager* _sharedInstance;
         [NSTimer
             scheduledTimerWithTimeInterval: 5
             repeats: false
-            block: ^(NSTimer *timer) {
+            block: ^(NSTimer* timer) {
                 [self startConnection];
             }
         ];
@@ -108,7 +108,7 @@ static BPSocketConnectionManager* _sharedInstance;
                 [self sendPongMessage];
             },
             kCommandGetVersionInfo: ^{
-                NSNumber *requestIdentifier = jsonContents[kId];
+                NSNumber* requestIdentifier = jsonContents[kId];
                 
                 if (!requestIdentifier) {
                     LOG(@"Version info request missing identifier");
@@ -118,7 +118,7 @@ static BPSocketConnectionManager* _sharedInstance;
                 [self sendIdentifiersMessageForId: requestIdentifier];
             },
             kCommandGetValidationData: ^{
-                NSNumber *requestIdentifier = jsonContents[kId];
+                NSNumber* requestIdentifier = jsonContents[kId];
                 
                 if (!requestIdentifier) {
                     LOG(@"Validation data request missing identifier");
@@ -136,15 +136,15 @@ static BPSocketConnectionManager* _sharedInstance;
                 }
             },
             kCommandResponse: ^{
-                NSDictionary *data = jsonContents[kData];
+                NSDictionary* data = jsonContents[kData];
                 
                 if (!data) {
                     LOG(@"Response missing data");
                     return;
                 }
                 
-                NSString *code = data[kCode];
-                NSString *secret = data[kSecret];
+                NSString* code = data[kCode];
+                NSString* secret = data[kSecret];
                 
                 if (!code || !secret) {
                     LOG(@"Response missing code or secret");
@@ -177,8 +177,8 @@ static BPSocketConnectionManager* _sharedInstance;
             return;
         }
         
-        NSError *jsonEncodingError;
-        NSData *jsonData = [NSJSONSerialization dataWithJSONObject: dictionary options: 0 error: &jsonEncodingError];
+        NSError* jsonEncodingError;
+        NSData* jsonData = [NSJSONSerialization dataWithJSONObject: dictionary options: 0 error: &jsonEncodingError];
         
         if (jsonEncodingError) {
             LOG(@"Serializing dictionary (%@) failed with error: %@", dictionary, jsonEncodingError);
@@ -187,13 +187,13 @@ static BPSocketConnectionManager* _sharedInstance;
         // so. for some incomprehensible reason, the precompiler for theos chokes when you include `{.*}`
         // in a string literal, so we have to cheat and escape them by inserting their unicode codes as
         // characters in format arguments
-        NSString *stringToBeSent = (jsonEncodingError != nil)
+        NSString* stringToBeSent = (jsonEncodingError != nil)
             ? [NSString stringWithFormat: @"%C \"error\": \"Couldn't serialize to JSON: %@\" %C", 0x007b, jsonEncodingError, 0x007b]
             : [NSString.alloc initWithData: jsonData encoding: NSUTF8StringEncoding];
             
         LOG(@"Sending dictionary string: %@", stringToBeSent);
         
-        NSError *sendingError;
+        NSError* sendingError;
         [socket sendString: stringToBeSent error: &sendingError];
         
         if (sendingError) {
@@ -202,7 +202,7 @@ static BPSocketConnectionManager* _sharedInstance;
     }
     
     - (void) sendMessageWithCommand:(NSString*)command data:(NSDictionary*)data id:(NSNumber*)requestIdentifier {
-        NSMutableDictionary *messageContents = [NSMutableDictionary new];
+        NSMutableDictionary* messageContents = [NSMutableDictionary new];
         
         messageContents[kCommand] = command;
         
@@ -226,7 +226,7 @@ static BPSocketConnectionManager* _sharedInstance;
     }
     
     - (void) sendBeginMessage {
-        NSMutableDictionary *data = [NSMutableDictionary new];
+        NSMutableDictionary* data = [NSMutableDictionary new];
         
         if (currentState.code && currentState.secret) {
             data[kCode] = currentState.code;
@@ -269,7 +269,7 @@ static BPSocketConnectionManager* _sharedInstance;
             return;
         }
         
-        NSMutableDictionary *data = [NSMutableDictionary new];
+        NSMutableDictionary* data = [NSMutableDictionary new];
         
         if (error) {
             data[kError] = [NSString stringWithFormat:@"Couldn't retrieve validation data: %@", error];
