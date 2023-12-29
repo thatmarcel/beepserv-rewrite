@@ -39,24 +39,20 @@
     - (void) viewWillAppear:(BOOL)animated {
         [super viewWillAppear: animated];
         
-        if (logLines.count > 0) {
-            [self scrollToBottomAnimated: false];
-        }
+        [self scrollToBottomAnimated: false];
     }
     
     - (void) viewDidAppear:(BOOL)animated {
         [super viewDidAppear: animated];
         
-        if (logLines.count > 0) {
-            [self scrollToBottomAnimated: true];
-        }
+        [self scrollToBottomAnimated: true];
         
         [NSTimer
             scheduledTimerWithTimeInterval: 2
             repeats: true
             block: ^(NSTimer *timer) {
                 [self readLogsWithCompletion: ^(BOOL hasNewLogs) {
-                    if (hasNewLogs && logLines.count > 0) {
+                    if (hasNewLogs) {
                         [self scrollToBottomAnimated: true];
                     }
                 }];
@@ -97,11 +93,15 @@
     }
     
     - (void) scrollToBottomAnimated:(BOOL)animated {
-        [self.tableView
-            scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: [self.tableView numberOfRowsInSection: 0] - 1 inSection: 0]
-            atScrollPosition: UITableViewScrollPositionBottom
-            animated: animated
-        ];
+        int rowCount = [self.tableView numberOfRowsInSection: 0];
+        
+        if (rowCount > 0) {
+            [self.tableView
+                scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: rowCount - 1 inSection: 0]
+                atScrollPosition: UITableViewScrollPositionBottom
+                animated: animated
+            ];
+        }
     }
     
     - (NSInteger) tableView:(UITableView*)tableView  numberOfRowsInSection:(NSInteger)section {
