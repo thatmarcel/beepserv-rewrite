@@ -1,4 +1,4 @@
 @interface BPPrefs: NSObject
-	+ (BOOL) shouldShowNotifications;
-	+ (void) setShouldShowNotifications:(BOOL)shouldShowNotificationsFromNowOn;
+    + (BOOL) shouldShowNotifications;
+    + (void) setShouldShowNotifications:(BOOL)shouldShowNotificationsFromNowOn;
 @end

@@ -1,4 +1,4 @@
 @interface BPDeviceIdentifiers: NSObject
-	+ (NSDictionary*) get;
-	+ (void) cache;
+    + (NSDictionary*) get;
+    + (void) cache;
 @end

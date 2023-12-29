@@ -10,258 +10,258 @@
 static BPSocketConnectionManager* _sharedInstance;
 
 @implementation BPSocketConnectionManager
-	@synthesize socket;
-	@synthesize currentState;
-	@synthesize validationDataRequestIdentifier;
-	@synthesize lastIdentifiersSendTimestamp;
-	@synthesize wasConnectedBefore;
-	
-	+ (instancetype) sharedInstance {
-		if (!_sharedInstance) {
-			_sharedInstance = [[BPSocketConnectionManager alloc] init];
-		}
-		
-		return _sharedInstance;
-	}
-	
-	- (instancetype) init {
-		self = [super init];
-		
-		self.currentState = [BPState restoreOrCreate];
-		
-		[NSDistributedNotificationCenter.defaultCenter
-			addObserverForName: kNotificationRequestStateUpdate
-			object: nil
-			queue: NSOperationQueue.mainQueue
-			usingBlock: ^(NSNotification *notification)
-		{
-			[self.currentState broadcast];
-		}];
-		
-		return self;
-	}
-	
-	- (void) startConnection {
-		LOG(@"Starting connection");
-		
-		@try {
-			NSString* filePath = ROOT_PATH_NS(@"/.beepserv_wsurl");
-			NSString* relayURL = [NSString stringWithContentsOfFile: filePath encoding: NSUTF8StringEncoding error: nil];
-			relayURL = relayURL ?: kDefaultRelayURL;
-			relayURL = [relayURL stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
-			
-			NSURLRequest *request = [NSURLRequest requestWithURL: [NSURL URLWithString: relayURL]];
-			
-			socket = [[SRWebSocket alloc] initWithURLRequest: request];
-			socket.delegate = self;
-			
-			[self.socket open];
-		} @catch (NSException* exception) {
-			NSError* error = [NSError errorWithDomain: exception.name code: 0 userInfo:@{
-				NSUnderlyingErrorKey: exception,
-				NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
-				NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"Unknown reason")
-			}];
-			
-			[self handleConnectionError: error];
-		}
-	}
-	
-	- (void) handleConnectionError:(NSError*)error {
-		LOG(@"Socket connection error: %@", error);
-		LOG(@"Waiting before trying to re-connect");
-		
-		[currentState updateConnected: false];
-		
-		[NSTimer
-			scheduledTimerWithTimeInterval: 5
-			repeats: false
-			block: ^(NSTimer *timer) {
-				[self startConnection];
-			}
-		];
-	}
-	
-	- (void) handleReceivedMessageWithContents:(NSDictionary*)jsonContents {
-		NSString* command = jsonContents[@"command"];
-		
-		((void (^)()) @{
-			@"ping" : ^{
-				[self sendPongMessage];
-			},
-			@"get-version-info" : ^{
-				NSNumber *requestIdentifier = jsonContents[@"id"];
-				
-				if (!requestIdentifier) {
-					LOG(@"Version info request missing identifier");
-					return;
-				}
-				
-				[self sendIdentifiersMessageForId: requestIdentifier];
-			},
-			@"get-validation-data" : ^{
-				NSNumber *requestIdentifier = jsonContents[@"id"];
-				
-				if (!requestIdentifier) {
-					LOG(@"Validation data request missing identifier");
-					return;
-				}
-				
-				validationDataRequestIdentifier = requestIdentifier;
-				
-				NSData* validationData = [BPValidationDataManager.sharedInstance getCachedIfPossible];
-				
-				if (validationData) {
-					[self sendValidationData: validationData error: nil];
-				} else {
-					[BPValidationDataManager.sharedInstance request];
-				}
-			},
-			@"response" : ^{
-				NSDictionary *data = jsonContents[@"data"];
-				
-				if (!data) {
-					LOG(@"Response missing data");
-					return;
-				}
-				
-				NSString *code = data[kCode];
-				NSString *secret = data[kSecret];
-				
-				if (!code || !secret) {
-					LOG(@"Response missing code or secret");
-					return;
-				}
-				
-				[self handleSuccessfulRelayRegistrationWithCode: code secret: secret];
-			}
-		}[command] ?: ^{
-			LOG(@"Unknown command: %@", command);
-		})();
-	}
-	
-	- (void) handleSuccessfulRelayRegistrationWithCode:(NSString*)code secret:(NSString*)secret {
-		if (!wasConnectedBefore) {
-			[BPNotificationHelper sendNotificationWithMessage: [
-				NSString stringWithFormat: @"Connected to relay with code: %@", code
-			]];
-		}
-		
-		wasConnectedBefore = true;
-		
-		[currentState updateCode: code secret: secret connected: true];
-	}
-	
-	- (void) sendDictionary:(NSDictionary*)dictionary {
-		if (!socket) {
-			LOG(@"Tried to send dictionary without socket");
-			return;
-		}
-		
-		NSError *jsonEncodingError;
-		NSData *jsonData = [NSJSONSerialization dataWithJSONObject: dictionary options: 0 error: &jsonEncodingError];
-		
-		if (jsonEncodingError) {
-			LOG(@"Serializing dictionary (%@) failed with error: %@", dictionary, jsonEncodingError);
-		}
-		
-		// so. for some incomprehensible reason, the precompiler for theos chokes when you include `{.*}`
-		// in a string literal, so we have to cheat and escape them by inserting their unicode codes as
-		// characters in format arguments
-		NSString *stringToBeSent = (jsonEncodingError != nil)
-			? [NSString stringWithFormat: @"%C \"error\": \"Couldn't serialize to JSON: %@\" %C", 0x007b, jsonEncodingError, 0x007b]
-			: [NSString.alloc initWithData: jsonData encoding: NSUTF8StringEncoding];
-			
-		LOG(@"Sending dictionary string: %@", stringToBeSent);
-		
-		NSError *sendingError;
-		[socket sendString: stringToBeSent error: &sendingError];
-		
-		if (sendingError) {
-			LOG(@"Sending dictionary string failed with error: %@", sendingError);
-		}
-	}
-	
-	- (void) sendMessageWithCommand:(NSString*)command data:(NSDictionary*)data id:(NSNumber*)requestIdentifier {
-		NSMutableDictionary *messageContents = [NSMutableDictionary new];
-		
-		messageContents[@"command"] = command;
-		
-		if (data) {
-			messageContents[@"data"] = data;
-		}
-		
-		if (requestIdentifier) {
-			messageContents[@"id"] = requestIdentifier;
-		}
-		
-		[self sendDictionary: messageContents];
-	}
-	
-	- (void) sendMessageWithCommand:(NSString*)command data:(NSDictionary*)data {
-		[self sendMessageWithCommand: command data: data id: nil];
-	}
-	
-	- (void) sendMessageWithCommand:(NSString*)command {
-		[self sendMessageWithCommand: command data: nil id: nil];
-	}
-	
-	- (void) sendBeginMessage {
-		NSMutableDictionary *data = [NSMutableDictionary new];
-		
-		if (currentState.code && currentState.secret) {
-			data[kCode] = currentState.code;
-			data[kSecret] = currentState.secret;
-		}
-		
-		[self sendMessageWithCommand: @"register" data: data];
-	}
-	
-	- (void) sendPongMessage {
-		[self sendMessageWithCommand: @"pong"];
-	}
-	
-	- (void) sendIdentifiersMessageForId:(NSNumber*)requestIdentifier {
-		NSDictionary* identifiers = [BPDeviceIdentifiers get];
-		
-		// Make sure we don't send multiple notifications
-		// if the version info is requested multiple
-		// times in a row
-		double currentTimestamp = [NSDate.date timeIntervalSince1970];
-		
-		if (!lastIdentifiersSendTimestamp || (lastIdentifiersSendTimestamp + 10) < currentTimestamp) {
-			[BPNotificationHelper sendNotificationWithMessage: @"Starting registration flow"];
-		}
-		
-		lastIdentifiersSendTimestamp = currentTimestamp;
-		
-		[self
-			sendMessageWithCommand: @"response"
-			data: @{
-				@"versions": identifiers
-			}
-			id: requestIdentifier
-		];
-	}
-	
-	- (void) sendValidationData:(NSData*)validationData error:(NSError*)error {
-		if (!validationDataRequestIdentifier) {
-			LOG(@"Not sending validation data because it was not generated due to a request");
-			return;
-		}
-		
-		NSMutableDictionary *data = [NSMutableDictionary new];
-		
-		if (error) {
-			data[kError] = [NSString stringWithFormat:@"Couldn't retrieve validation data: %@", error];
-		}
-		
-		if (validationData) {
-			data[@"data"] = [validationData base64EncodedStringWithOptions:0];
-		}
-		
-		[self sendMessageWithCommand: @"response" data: data id: validationDataRequestIdentifier];
-		
-		validationDataRequestIdentifier = nil;
-	}
+    @synthesize socket;
+    @synthesize currentState;
+    @synthesize validationDataRequestIdentifier;
+    @synthesize lastIdentifiersSendTimestamp;
+    @synthesize wasConnectedBefore;
+    
+    + (instancetype) sharedInstance {
+        if (!_sharedInstance) {
+            _sharedInstance = [[BPSocketConnectionManager alloc] init];
+        }
+        
+        return _sharedInstance;
+    }
+    
+    - (instancetype) init {
+        self = [super init];
+        
+        self.currentState = [BPState restoreOrCreate];
+        
+        [NSDistributedNotificationCenter.defaultCenter
+            addObserverForName: kNotificationRequestStateUpdate
+            object: nil
+            queue: NSOperationQueue.mainQueue
+            usingBlock: ^(NSNotification *notification)
+        {
+            [self.currentState broadcast];
+        }];
+        
+        return self;
+    }
+    
+    - (void) startConnection {
+        LOG(@"Starting connection");
+        
+        @try {
+            NSString* filePath = ROOT_PATH_NS(@"/.beepserv_wsurl");
+            NSString* relayURL = [NSString stringWithContentsOfFile: filePath encoding: NSUTF8StringEncoding error: nil];
+            relayURL = relayURL ?: kDefaultRelayURL;
+            relayURL = [relayURL stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            
+            NSURLRequest *request = [NSURLRequest requestWithURL: [NSURL URLWithString: relayURL]];
+            
+            socket = [[SRWebSocket alloc] initWithURLRequest: request];
+            socket.delegate = self;
+            
+            [self.socket open];
+        } @catch (NSException* exception) {
+            NSError* error = [NSError errorWithDomain: exception.name code: 0 userInfo:@{
+                NSUnderlyingErrorKey: exception,
+                NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
+                NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"Unknown reason")
+            }];
+            
+            [self handleConnectionError: error];
+        }
+    }
+    
+    - (void) handleConnectionError:(NSError*)error {
+        LOG(@"Socket connection error: %@", error);
+        LOG(@"Waiting before trying to re-connect");
+        
+        [currentState updateConnected: false];
+        
+        [NSTimer
+            scheduledTimerWithTimeInterval: 5
+            repeats: false
+            block: ^(NSTimer *timer) {
+                [self startConnection];
+            }
+        ];
+    }
+    
+    - (void) handleReceivedMessageWithContents:(NSDictionary*)jsonContents {
+        NSString* command = jsonContents[@"command"];
+        
+        ((void (^)()) @{
+            @"ping" : ^{
+                [self sendPongMessage];
+            },
+            @"get-version-info" : ^{
+                NSNumber *requestIdentifier = jsonContents[@"id"];
+                
+                if (!requestIdentifier) {
+                    LOG(@"Version info request missing identifier");
+                    return;
+                }
+                
+                [self sendIdentifiersMessageForId: requestIdentifier];
+            },
+            @"get-validation-data" : ^{
+                NSNumber *requestIdentifier = jsonContents[@"id"];
+                
+                if (!requestIdentifier) {
+                    LOG(@"Validation data request missing identifier");
+                    return;
+                }
+                
+                validationDataRequestIdentifier = requestIdentifier;
+                
+                NSData* validationData = [BPValidationDataManager.sharedInstance getCachedIfPossible];
+                
+                if (validationData) {
+                    [self sendValidationData: validationData error: nil];
+                } else {
+                    [BPValidationDataManager.sharedInstance request];
+                }
+            },
+            @"response" : ^{
+                NSDictionary *data = jsonContents[@"data"];
+                
+                if (!data) {
+                    LOG(@"Response missing data");
+                    return;
+                }
+                
+                NSString *code = data[kCode];
+                NSString *secret = data[kSecret];
+                
+                if (!code || !secret) {
+                    LOG(@"Response missing code or secret");
+                    return;
+                }
+                
+                [self handleSuccessfulRelayRegistrationWithCode: code secret: secret];
+            }
+        }[command] ?: ^{
+            LOG(@"Unknown command: %@", command);
+        })();
+    }
+    
+    - (void) handleSuccessfulRelayRegistrationWithCode:(NSString*)code secret:(NSString*)secret {
+        if (!wasConnectedBefore) {
+            [BPNotificationHelper sendNotificationWithMessage: [
+                NSString stringWithFormat: @"Connected to relay with code: %@", code
+            ]];
+        }
+        
+        wasConnectedBefore = true;
+        
+        [currentState updateCode: code secret: secret connected: true];
+    }
+    
+    - (void) sendDictionary:(NSDictionary*)dictionary {
+        if (!socket) {
+            LOG(@"Tried to send dictionary without socket");
+            return;
+        }
+        
+        NSError *jsonEncodingError;
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject: dictionary options: 0 error: &jsonEncodingError];
+        
+        if (jsonEncodingError) {
+            LOG(@"Serializing dictionary (%@) failed with error: %@", dictionary, jsonEncodingError);
+        }
+        
+        // so. for some incomprehensible reason, the precompiler for theos chokes when you include `{.*}`
+        // in a string literal, so we have to cheat and escape them by inserting their unicode codes as
+        // characters in format arguments
+        NSString *stringToBeSent = (jsonEncodingError != nil)
+            ? [NSString stringWithFormat: @"%C \"error\": \"Couldn't serialize to JSON: %@\" %C", 0x007b, jsonEncodingError, 0x007b]
+            : [NSString.alloc initWithData: jsonData encoding: NSUTF8StringEncoding];
+            
+        LOG(@"Sending dictionary string: %@", stringToBeSent);
+        
+        NSError *sendingError;
+        [socket sendString: stringToBeSent error: &sendingError];
+        
+        if (sendingError) {
+            LOG(@"Sending dictionary string failed with error: %@", sendingError);
+        }
+    }
+    
+    - (void) sendMessageWithCommand:(NSString*)command data:(NSDictionary*)data id:(NSNumber*)requestIdentifier {
+        NSMutableDictionary *messageContents = [NSMutableDictionary new];
+        
+        messageContents[@"command"] = command;
+        
+        if (data) {
+            messageContents[@"data"] = data;
+        }
+        
+        if (requestIdentifier) {
+            messageContents[@"id"] = requestIdentifier;
+        }
+        
+        [self sendDictionary: messageContents];
+    }
+    
+    - (void) sendMessageWithCommand:(NSString*)command data:(NSDictionary*)data {
+        [self sendMessageWithCommand: command data: data id: nil];
+    }
+    
+    - (void) sendMessageWithCommand:(NSString*)command {
+        [self sendMessageWithCommand: command data: nil id: nil];
+    }
+    
+    - (void) sendBeginMessage {
+        NSMutableDictionary *data = [NSMutableDictionary new];
+        
+        if (currentState.code && currentState.secret) {
+            data[kCode] = currentState.code;
+            data[kSecret] = currentState.secret;
+        }
+        
+        [self sendMessageWithCommand: @"register" data: data];
+    }
+    
+    - (void) sendPongMessage {
+        [self sendMessageWithCommand: @"pong"];
+    }
+    
+    - (void) sendIdentifiersMessageForId:(NSNumber*)requestIdentifier {
+        NSDictionary* identifiers = [BPDeviceIdentifiers get];
+        
+        // Make sure we don't send multiple notifications
+        // if the version info is requested multiple
+        // times in a row
+        double currentTimestamp = [NSDate.date timeIntervalSince1970];
+        
+        if (!lastIdentifiersSendTimestamp || (lastIdentifiersSendTimestamp + 10) < currentTimestamp) {
+            [BPNotificationHelper sendNotificationWithMessage: @"Starting registration flow"];
+        }
+        
+        lastIdentifiersSendTimestamp = currentTimestamp;
+        
+        [self
+            sendMessageWithCommand: @"response"
+            data: @{
+                @"versions": identifiers
+            }
+            id: requestIdentifier
+        ];
+    }
+    
+    - (void) sendValidationData:(NSData*)validationData error:(NSError*)error {
+        if (!validationDataRequestIdentifier) {
+            LOG(@"Not sending validation data because it was not generated due to a request");
+            return;
+        }
+        
+        NSMutableDictionary *data = [NSMutableDictionary new];
+        
+        if (error) {
+            data[kError] = [NSString stringWithFormat:@"Couldn't retrieve validation data: %@", error];
+        }
+        
+        if (validationData) {
+            data[@"data"] = [validationData base64EncodedStringWithOptions:0];
+        }
+        
+        [self sendMessageWithCommand: @"response" data: data id: validationDataRequestIdentifier];
+        
+        validationDataRequestIdentifier = nil;
+    }
 @end

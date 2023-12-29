@@ -1,3 +1,3 @@
 @interface IDSServiceProperties: NSObject
-	@property (nonatomic,retain) NSString* identifier;
+    @property (nonatomic,retain) NSString* identifier;
 @end
