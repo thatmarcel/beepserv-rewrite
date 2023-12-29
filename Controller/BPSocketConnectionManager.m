@@ -64,7 +64,7 @@ static BPSocketConnectionManager* _sharedInstance;
             
             [self.socket open];
         } @catch (NSException* exception) {
-            NSError* error = [NSError errorWithDomain: exception.name code: 0 userInfo:@{
+            NSError* error = [NSError errorWithDomain: exception.name code: 0 userInfo: @{
                 NSUnderlyingErrorKey: exception,
                 NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
                 NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"Unknown reason")
@@ -77,6 +77,7 @@ static BPSocketConnectionManager* _sharedInstance;
     - (void) handleConnectionError:(NSError*)error {
         failedConnectionAttemptCountInARow += 1;
         
+        // Don't spam the log if e.g. the device is offline
         if (failedConnectionAttemptCountInARow <= 3) {
             LOG(@"Socket connection error: %@", error);
             LOG(@"Waiting before trying to re-connect");
@@ -159,6 +160,8 @@ static BPSocketConnectionManager* _sharedInstance;
     }
     
     - (void) handleSuccessfulRelayRegistrationWithCode:(NSString*)code secret:(NSString*)secret {
+        // Only send a notification (bulletin) if we have a new code
+        // because brief disconnects can happen
         if (!wasConnectedBefore || ![code isEqual: currentState.code]) {
             [BPNotificationHelper sendNotificationWithMessage: [
                 NSString stringWithFormat: @"Connected to relay with code: %@", code
@@ -244,8 +247,7 @@ static BPSocketConnectionManager* _sharedInstance;
         NSDictionary* identifiers = [BPDeviceIdentifiers get];
         
         // Make sure we don't send multiple notifications
-        // if the version info is requested multiple
-        // times in a row
+        // if the version info is requested multiple times in a row
         double currentTimestamp = [NSDate.date timeIntervalSince1970];
         
         if (!lastIdentifiersSendTimestamp || (lastIdentifiersSendTimestamp + 10) < currentTimestamp) {
@@ -265,14 +267,14 @@ static BPSocketConnectionManager* _sharedInstance;
     
     - (void) sendValidationData:(NSData*)validationData error:(NSError*)error {
         if (!validationDataRequestIdentifier) {
-            LOG(@"Not sending validation data because it was not generated due to a request");
+            LOG(@"Not sending validation data because we don't have a corresponding request identifier");
             return;
         }
         
         NSMutableDictionary* data = [NSMutableDictionary new];
         
         if (error) {
-            data[kError] = [NSString stringWithFormat:@"Couldn't retrieve validation data: %@", error];
+            data[kError] = [NSString stringWithFormat: @"Couldn't retrieve validation data: %@", error];
         }
         
         if (validationData) {

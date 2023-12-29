@@ -2,6 +2,7 @@
 
 @interface BPAppDelegate: UIResponder <UIApplicationDelegate>{
     UITabBarController* _tabBarViewController;
+    
     UINavigationController* _overviewNavigationViewController;
     UINavigationController* _logsNavigationViewController;
 }

@@ -7,7 +7,7 @@
 // Because this file is shared between modules, we cannot use the
 // module-specific logging files
 #import "./Constants.h"
-#define LOG(...) bp_log_impl(@"State", [NSString stringWithFormat: __VA_ARGS__])
+#define LOG(...) bp_log_impl(@"Shared", [NSString stringWithFormat: __VA_ARGS__])
 void bp_log_impl(NSString* moduleName, NSString* logString);
 
 static NSString* stateFilePath = ROOT_PATH_NS(@"/var/mobile/.beepserv_state");
@@ -25,7 +25,7 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
     + (instancetype) restoreOrCreate {
         LOG(@"Trying to restore state");
         
-        // As SpringBoard should have r/w permissions for the normal path on all setups,
+        // As SpringBoard should have r/w permissions for the normal file path on all setups,
         // the alternative file is not needed anymore, so we'll delete it
         if ([NSFileManager.defaultManager fileExistsAtPath: alternativeStateFilePath isDirectory: nil]) {
             LOG(@"Found alternative state file");
@@ -110,7 +110,8 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
     
     - (void) broadcast {
         NSDictionary* serializedState = [self serializeToDictionary];
-            
+        
+        // Broadcasts the new state so the app can update its UI
         [[NSDistributedNotificationCenter defaultCenter]
             postNotificationName: kNotificationUpdateState
             object: nil

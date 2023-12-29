@@ -21,6 +21,7 @@ BPValidationDataManager* _sharedInstance;
     - (instancetype) init {
         self = [super init];
         
+        // Listen for validation data responses from IdentityServices
         [NSDistributedNotificationCenter.defaultCenter
             addObserverForName: kNotificationValidationDataResponse
             object: nil
@@ -66,6 +67,7 @@ BPValidationDataManager* _sharedInstance;
         
         [BPNotificationHelper sendNotificationWithMessage: @"Requesting new validation data"];
         
+        // Send a validation data request to IdentityServices
         [NSDistributedNotificationCenter.defaultCenter
             postNotificationName: kNotificationRequestValidationData
             object: nil

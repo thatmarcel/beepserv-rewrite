@@ -21,9 +21,17 @@
     
     + (instancetype) sharedInstance;
     
+    // Creates a new socket and tries to connect
     - (void) startConnection;
+    
+    // When a connection error is received, we log it and try again after a delay
     - (void) handleConnectionError:(NSError*)error;
+    
+    // Depending on the command in the message, we call one of the other handler functions
     - (void) handleReceivedMessageWithContents:(NSDictionary*)jsonContents;
+    
+    // When we receive a registration code and secret, we update the state with it
+    // and notify the user (via a bulletin) if the code is new
     - (void) handleSuccessfulRelayRegistrationWithCode:(NSString*)code secret:(NSString*)secret;
     
     - (void) sendDictionary:(NSDictionary*)dictionary;

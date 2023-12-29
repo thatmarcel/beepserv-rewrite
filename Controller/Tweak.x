@@ -8,6 +8,8 @@
         
         LOG(@"SpringBoard launched");
         
+        // We wait a bit to make sure SpringBoard has fully initialized
+        // before trying to connect to the registration relay
         [NSTimer
             scheduledTimerWithTimeInterval: 5
             repeats: false

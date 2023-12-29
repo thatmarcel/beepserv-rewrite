@@ -40,6 +40,7 @@
     - (void) setValidationData:(NSData*)data {
         LOG(@"Got validation data: %@", data);
         
+        // Validation data requires after 10 minutes
         double validationDataExpiryTimestamp = [NSDate.date timeIntervalSince1970] + 10 * 60;
         
         // Send validation data to the Controller
@@ -80,11 +81,14 @@ void generateValidationData() {
         }
         
         LOG(@"Re-registering account");
+        
+        // This leads to -[IDSRegistrationMessage setValidationData:] being called
         [account reregister];
         
         return;
     }
     
+    // Notify the Controller about not having found an account
     [NSDistributedNotificationCenter.defaultCenter
         postNotificationName: kNotificationValidationDataResponse
         object: nil

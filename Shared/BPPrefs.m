@@ -4,7 +4,7 @@
 // Because this file is shared between modules, we cannot use the
 // module-specific logging files
 #import "./Constants.h"
-#define LOG(...) bp_log_impl(@"Prefs", [NSString stringWithFormat: __VA_ARGS__])
+#define LOG(...) bp_log_impl(@"Shared", [NSString stringWithFormat: __VA_ARGS__])
 void bp_log_impl(NSString* moduleName, NSString* logString);
 
 @implementation BPPrefs

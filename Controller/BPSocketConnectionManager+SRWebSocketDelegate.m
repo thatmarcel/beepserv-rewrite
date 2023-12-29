@@ -2,6 +2,8 @@
 #import "../Shared/Constants.h"
 #import "./Logging.h"
 
+// We put the methods for the SRWebSocketDelegate in a separate file for better organization
+
 @implementation BPSocketConnectionManager (SRWebSocketDelegate)
     - (void) webSocketDidOpen:(SRWebSocket*)webSocket {
         [self sendBeginMessage];
@@ -32,9 +34,8 @@
     }
     
     - (void) webSocket:(SRWebSocket*)webSocket didCloseWithCode:(NSInteger)code reason:(NSString*)reason wasClean:(BOOL)wasClean {
-        NSDictionary* userInfo = @{
-            @"Error Reason": [NSString stringWithFormat: @"webSocket closed with reason: %@", reason]
-        };
-        [self handleConnectionError: [NSError errorWithDomain: kSuiteName code: code userInfo: userInfo]];
+        [self handleConnectionError: [NSError errorWithDomain: kSuiteName code: code userInfo: @{
+            @"Error Reason": [NSString stringWithFormat: @"Socket closed with reason: %@", reason]
+        }]];
     }
 @end

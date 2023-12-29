@@ -5,12 +5,18 @@
 #import "../Shared/NSDistributedNotificationCenter.h"
 
 @interface BPOverviewViewController ()
+    // Only shown when we are connected and have a registration code
     @property (retain) UIView* connectionDetailsContainer;
     @property (retain) UILabel* codeLabel;
     @property (retain) UILabel* aboveCodeLabel;
     @property (retain) UILabel* belowCodeLabel;
+    
+    // Only shown when we are not connected
     @property (retain) UILabel* noConnectionLabel;
+    
+    // Only shown before we receive a state update from the Controller
     @property (retain) UIActivityIndicatorView* activityIndicatorView;
+    
     @property (retain) UIView* notificationPrefsContainer;
     @property (retain) UILabel* notificationsSwitchLabel;
     @property (retain) UISwitch* notificationsSwitch;
@@ -188,6 +194,8 @@
     }
     
     - (void) addStateUpdateListener {
+        // Listen for state updates from the Controller
+        // and update the UI accordingly
         [NSDistributedNotificationCenter.defaultCenter
             addObserverForName: kNotificationUpdateState
             object: nil
@@ -200,6 +208,7 @@
     }
     
     - (void) requestStateUpdate {
+        // Request an initial state update from the Controller
         [[NSDistributedNotificationCenter defaultCenter]
             postNotificationName: kNotificationRequestStateUpdate
             object: nil
@@ -211,7 +220,9 @@
         [activityIndicatorView stopAnimating];
         
         if (state.isConnected) {
-            codeLabel.text = [state.code stringByReplacingOccurrencesOfString: @"-" withString: @"\n"];
+            // We have to escape the question marks because the compiler will
+            // think it's a trigraph otherwise
+            codeLabel.text = [(state.code ?: @"\?\?\?\?-\?\?\?\?-\?\?\?\?-\?\?\?\?") stringByReplacingOccurrencesOfString: @"-" withString: @"\n"];
             
             noConnectionLabel.hidden = true;
             connectionDetailsContainer.hidden = false;

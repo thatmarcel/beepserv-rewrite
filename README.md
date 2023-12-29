@@ -9,9 +9,7 @@ The tweak is now split into 3 parts:
 - **Controller**: This hooks into `SpringBoard` (which makes sending notifications easier) and manages basically everything, including the relay connection
 - **IdentityServices**: The part that hooks into `identityservicesd` and handles the generation of validation data
 
-The app is pretty simple at the moment and does not have an icon yet.
-
-The code doesn't contain many comments as of now.
+The app is pretty simple and does not have an icon yet.
 
 Also, this rewrite has only been tested on a device with a rootful jailbreak so far (but it should work on rootless configurations too?)
 
