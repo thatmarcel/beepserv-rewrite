@@ -99,16 +99,16 @@ static BPSocketConnectionManager* _sharedInstance;
     }
     
     - (void) handleReceivedMessageWithContents:(NSDictionary*)jsonContents {
-        NSString* command = jsonContents[@"command"];
+        NSString* command = jsonContents[kCommand];
         
         // If there are no switch cases in Objective-C,
         // we just have to make our own
         ((void (^)()) @{
-            @"ping" : ^{
+            kCommandPing: ^{
                 [self sendPongMessage];
             },
-            @"get-version-info" : ^{
-                NSNumber *requestIdentifier = jsonContents[@"id"];
+            kCommandGetVersionInfo: ^{
+                NSNumber *requestIdentifier = jsonContents[kId];
                 
                 if (!requestIdentifier) {
                     LOG(@"Version info request missing identifier");
@@ -117,8 +117,8 @@ static BPSocketConnectionManager* _sharedInstance;
                 
                 [self sendIdentifiersMessageForId: requestIdentifier];
             },
-            @"get-validation-data" : ^{
-                NSNumber *requestIdentifier = jsonContents[@"id"];
+            kCommandGetValidationData: ^{
+                NSNumber *requestIdentifier = jsonContents[kId];
                 
                 if (!requestIdentifier) {
                     LOG(@"Validation data request missing identifier");
@@ -135,8 +135,8 @@ static BPSocketConnectionManager* _sharedInstance;
                     [BPValidationDataManager.sharedInstance request];
                 }
             },
-            @"response" : ^{
-                NSDictionary *data = jsonContents[@"data"];
+            kCommandResponse: ^{
+                NSDictionary *data = jsonContents[kData];
                 
                 if (!data) {
                     LOG(@"Response missing data");
@@ -204,14 +204,14 @@ static BPSocketConnectionManager* _sharedInstance;
     - (void) sendMessageWithCommand:(NSString*)command data:(NSDictionary*)data id:(NSNumber*)requestIdentifier {
         NSMutableDictionary *messageContents = [NSMutableDictionary new];
         
-        messageContents[@"command"] = command;
+        messageContents[kCommand] = command;
         
         if (data) {
-            messageContents[@"data"] = data;
+            messageContents[kData] = data;
         }
         
         if (requestIdentifier) {
-            messageContents[@"id"] = requestIdentifier;
+            messageContents[kId] = requestIdentifier;
         }
         
         [self sendDictionary: messageContents];
@@ -233,11 +233,11 @@ static BPSocketConnectionManager* _sharedInstance;
             data[kSecret] = currentState.secret;
         }
         
-        [self sendMessageWithCommand: @"register" data: data];
+        [self sendMessageWithCommand: kCommandRegister data: data];
     }
     
     - (void) sendPongMessage {
-        [self sendMessageWithCommand: @"pong"];
+        [self sendMessageWithCommand: kCommandPong];
     }
     
     - (void) sendIdentifiersMessageForId:(NSNumber*)requestIdentifier {
@@ -255,9 +255,9 @@ static BPSocketConnectionManager* _sharedInstance;
         lastIdentifiersSendTimestamp = currentTimestamp;
         
         [self
-            sendMessageWithCommand: @"response"
+            sendMessageWithCommand: kCommandResponse
             data: @{
-                @"versions": identifiers
+                kVersions: identifiers
             }
             id: requestIdentifier
         ];
@@ -276,10 +276,10 @@ static BPSocketConnectionManager* _sharedInstance;
         }
         
         if (validationData) {
-            data[@"data"] = [validationData base64EncodedStringWithOptions:0];
+            data[kData] = [validationData base64EncodedStringWithOptions:0];
         }
         
-        [self sendMessageWithCommand: @"response" data: data id: validationDataRequestIdentifier];
+        [self sendMessageWithCommand: kCommandResponse data: data id: validationDataRequestIdentifier];
         
         validationDataRequestIdentifier = nil;
     }
