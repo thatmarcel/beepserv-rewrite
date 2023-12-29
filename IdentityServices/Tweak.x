@@ -42,6 +42,8 @@
         
         double validationDataExpiryTimestamp = [NSDate.date timeIntervalSince1970] + 10 * 60;
         
+        // Send validation data to the Controller
+        // which then sends it to the relay
         [NSDistributedNotificationCenter.defaultCenter
             postNotificationName: kNotificationValidationDataResponse
             object: nil
@@ -64,6 +66,8 @@ void generateValidationData() {
     for (IDSDAccount* account in accounts) {
         LOG(@"Account: %@, registration: %@", account, account.registration);
         
+        // Make sure this is an iMessage account
+        // (not completely sure whether this is necessary)
         if (![account.service.identifier isEqual: @"com.apple.madrid"]) {
             continue;
         }
@@ -93,6 +97,8 @@ void generateValidationData() {
 %ctor {
     LOG(@"Started");
     
+    // Listen for validation data requests from
+    // the Controller (which listens for requests from the relay)
     [NSDistributedNotificationCenter.defaultCenter
         addObserverForName: kNotificationRequestValidationData
         object: nil
