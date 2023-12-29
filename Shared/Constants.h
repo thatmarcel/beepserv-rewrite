@@ -1,3 +1,4 @@
+#import <Foundation/Foundation.h>
 #import <rootless.h>
 
 static NSString* kSuiteName = @"com.beeper.beepserv";
