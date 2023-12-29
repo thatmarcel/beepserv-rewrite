@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+
 @interface NSDistributedNotificationCenter: NSNotificationCenter
     @property (assign) BOOL suspended;
     + (id) defaultCenter;

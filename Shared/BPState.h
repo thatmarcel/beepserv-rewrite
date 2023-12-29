@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+
 @interface BPState: NSObject
     @property (retain) NSString* code;
     @property (retain) NSString* secret;

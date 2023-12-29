@@ -1,3 +1,4 @@
+#import <Foundation/Foundation.h>
 #import "SRWebSocket.h"
 #import "../Shared/BPState.h"
 
