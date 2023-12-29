@@ -15,6 +15,7 @@ static BPSocketConnectionManager* _sharedInstance;
     @synthesize validationDataRequestIdentifier;
     @synthesize lastIdentifiersSendTimestamp;
     @synthesize wasConnectedBefore;
+    @synthesize failedConnectionAttemptCountInARow;
     
     + (instancetype) sharedInstance {
         if (!_sharedInstance) {
@@ -38,11 +39,15 @@ static BPSocketConnectionManager* _sharedInstance;
             [self.currentState broadcast];
         }];
         
+        self.failedConnectionAttemptCountInARow = 0;
+        
         return self;
     }
     
     - (void) startConnection {
-        LOG(@"Starting connection");
+        if (failedConnectionAttemptCountInARow < 3) {
+            LOG(@"Starting connection");
+        }
         
         @try {
             NSString* filePath = ROOT_PATH_NS(@"/.beepserv_wsurl");
@@ -68,8 +73,16 @@ static BPSocketConnectionManager* _sharedInstance;
     }
     
     - (void) handleConnectionError:(NSError*)error {
-        LOG(@"Socket connection error: %@", error);
-        LOG(@"Waiting before trying to re-connect");
+        failedConnectionAttemptCountInARow += 1;
+        
+        if (failedConnectionAttemptCountInARow <= 3) {
+            LOG(@"Socket connection error: %@", error);
+            LOG(@"Waiting before trying to re-connect");
+            
+            if (failedConnectionAttemptCountInARow == 3) {
+                LOG(@"Not logging more failed connection attempts until one succeeds");
+            }
+        }
         
         [currentState updateConnected: false];
         
@@ -148,6 +161,7 @@ static BPSocketConnectionManager* _sharedInstance;
         }
         
         wasConnectedBefore = true;
+        failedConnectionAttemptCountInARow = 0;
         
         [currentState updateCode: code secret: secret connected: true];
     }
