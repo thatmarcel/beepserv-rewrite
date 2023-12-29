@@ -67,4 +67,5 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-          files: com.beeper.beepserv_*.deb
+          fail_on_unmatched_files: true
+          files: beepserv-*/com.beeper.beepserv_*.deb
