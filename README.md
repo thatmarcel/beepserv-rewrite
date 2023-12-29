@@ -16,10 +16,13 @@ The code doesn't contain many comments as of now.
 Also, this rewrite has only been tested on a device with a rootful jailbreak so far (but it should work on rootless configurations too?)
 
 ## Building
+You need to have [Theos](https://theos.dev/docs/installation) installed.
+
 ### Rootful
 `make clean package FINALPACKAGE=1`
 
 The Makefiles currently assume you have Xcode 11.7 installed at `/Applications/Xcode_11.7.app` when packaging for rootful to ensure compatibility with A12+ devices on iOS 12.0-13.7 ([more here](https://theos.dev/docs/arm64e-deployment)). You can either download this version from Apple or edit the Makefiles if you want to build with a different version.
+
 ### Rootless
 `make clean package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1`
 
