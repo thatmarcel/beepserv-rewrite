@@ -19,7 +19,7 @@
             self.view.backgroundColor = [UIColor whiteColor];
         }
         
-        [self readLogs];
+        [self readLogsWithCompletion: nil];
     }
     
     // We scroll to the bottom in viewWillAppear and viewDidAppear
@@ -54,38 +54,49 @@
             scheduledTimerWithTimeInterval: 2
             repeats: true
             block: ^(NSTimer *timer) {
-                bool hasNewLogs = [self readLogs];
-                
-                if (hasNewLogs && logLines.count > 0) {
-                    [self.tableView
-                        scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: logLines.count - 1 inSection: 0]
-                        atScrollPosition: UITableViewScrollPositionBottom
-                        animated: true
-                    ];
-                }
+                [self readLogsWithCompletion: ^(BOOL hasNewLogs) {
+                    if (hasNewLogs && logLines.count > 0) {
+                        [self.tableView
+                            scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: logLines.count - 1 inSection: 0]
+                            atScrollPosition: UITableViewScrollPositionBottom
+                            animated: true
+                        ];
+                    }
+                }];
             }
         ];
     }
     
-    // Returns whether there are new logs so the table view
+    // Completion callback passes whether there are new logs so the table view
     // only scrolls to the bottom if there are
-    - (bool) readLogs {
-        NSString* logFileContent = [[NSString
-            stringWithContentsOfFile: kLogFilePath encoding: NSUTF8StringEncoding error: nil] 
-            stringByTrimmingCharactersInSet: [NSCharacterSet newlineCharacterSet]
-        ];
-        
-        if ([logFileContent isEqual: lastLogFileContent]) {
-            return false;
-        }
-        
-        lastLogFileContent = logFileContent;
-        
-        logLines = [logFileContent componentsSeparatedByString: @"\n"];
-        
-        [self.tableView reloadData];
-        
-        return true;
+    - (void) readLogsWithCompletion:(void (^)(BOOL))completion {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSString* logFileContent = [[NSString
+                stringWithContentsOfFile: kLogFilePath encoding: NSUTF8StringEncoding error: nil] 
+                stringByTrimmingCharactersInSet: [NSCharacterSet newlineCharacterSet]
+            ];
+            
+            if ([logFileContent isEqual: lastLogFileContent]) {
+                dispatch_async(dispatch_get_main_queue(), ^(void) {
+                    if (completion) {
+                        completion(false);
+                    }
+                });
+                return;
+            }
+            
+            lastLogFileContent = logFileContent;
+            
+            logLines = [logFileContent componentsSeparatedByString: @"\n"];
+            
+            dispatch_async(dispatch_get_main_queue(), ^(void) {
+                [self.tableView reloadData];
+                
+                if (completion) {
+                    completion(true);
+                }
+            });
+        });
     }
     
     - (NSInteger) tableView:(UITableView*)tableView  numberOfRowsInSection:(NSInteger)section {
