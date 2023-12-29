@@ -54,9 +54,9 @@
             scheduledTimerWithTimeInterval: 2
             repeats: true
             block: ^(NSTimer *timer) {
-                [self readLogs];
+                bool hasNewLogs = [self readLogs];
                 
-                if (logLines.count > 0) {
+                if (hasNewLogs && logLines.count > 0) {
                     [self.tableView
                         scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: logLines.count - 1 inSection: 0]
                         atScrollPosition: UITableViewScrollPositionBottom
@@ -67,18 +67,25 @@
         ];
     }
     
-    - (void) readLogs {
-        NSString* logFileContent = [NSString stringWithContentsOfFile: kLogFilePath encoding: NSUTF8StringEncoding error: nil];
+    // Returns whether there are new logs so the table view
+    // only scrolls to the bottom if there are
+    - (bool) readLogs {
+        NSString* logFileContent = [[NSString
+            stringWithContentsOfFile: kLogFilePath encoding: NSUTF8StringEncoding error: nil] 
+            stringByTrimmingCharactersInSet: [NSCharacterSet newlineCharacterSet]
+        ];
         
         if ([logFileContent isEqual: lastLogFileContent]) {
-            return;
+            return false;
         }
         
         lastLogFileContent = logFileContent;
         
-        logLines = [[logFileContent stringByTrimmingCharactersInSet: [NSCharacterSet newlineCharacterSet]] componentsSeparatedByString: @"\n"];
+        logLines = [logFileContent componentsSeparatedByString: @"\n"];
         
         [self.tableView reloadData];
+        
+        return true;
     }
     
     - (NSInteger) tableView:(UITableView*)tableView  numberOfRowsInSection:(NSInteger)section {
