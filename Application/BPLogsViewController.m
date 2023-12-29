@@ -40,11 +40,7 @@
         [super viewWillAppear: animated];
         
         if (logLines.count > 0) {
-            [self.tableView
-                scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: logLines.count - 1 inSection: 0]
-                atScrollPosition: UITableViewScrollPositionBottom
-                animated: false
-            ];
+            [self scrollToBottomAnimated: false];
         }
     }
     
@@ -52,11 +48,7 @@
         [super viewDidAppear: animated];
         
         if (logLines.count > 0) {
-            [self.tableView
-                scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: logLines.count - 1 inSection: 0]
-                atScrollPosition: UITableViewScrollPositionBottom
-                animated: true
-            ];
+            [self scrollToBottomAnimated: true];
         }
         
         [NSTimer
@@ -65,11 +57,7 @@
             block: ^(NSTimer *timer) {
                 [self readLogsWithCompletion: ^(BOOL hasNewLogs) {
                     if (hasNewLogs && logLines.count > 0) {
-                        [self.tableView
-                            scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: logLines.count - 1 inSection: 0]
-                            atScrollPosition: UITableViewScrollPositionBottom
-                            animated: true
-                        ];
+                        [self scrollToBottomAnimated: true];
                     }
                 }];
             }
@@ -106,6 +94,14 @@
                 }
             });
         });
+    }
+    
+    - (void) scrollToBottomAnimated:(BOOL)animated {
+        [self.tableView
+            scrollToRowAtIndexPath: [NSIndexPath indexPathForRow: [self.tableView numberOfRowsInSection: 0] - 1 inSection: 0]
+            atScrollPosition: UITableViewScrollPositionBottom
+            animated: animated
+        ];
     }
     
     - (NSInteger) tableView:(UITableView*)tableView  numberOfRowsInSection:(NSInteger)section {
