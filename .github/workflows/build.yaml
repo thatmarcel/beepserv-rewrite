@@ -24,7 +24,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: ./packages/com.beeper.beepserv_*.deb
-          name: phone-registration-provider
+          name: beepserv-rootless
           if-no-files-found: error
 
   theos-rootful:
@@ -48,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: ./packages/com.beeper.beepserv_*.deb
-          name: phone-registration-provider
+          name: beepserv-rootful
           if-no-files-found: error
   release:
     needs: [theos-rootless, theos-rootful]
