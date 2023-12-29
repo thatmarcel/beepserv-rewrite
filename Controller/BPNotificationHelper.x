@@ -6,33 +6,20 @@
 #import <BulletinBoard/BBBulletin.h>
 #import <BulletinBoard/BBServer.h>
 
-@interface BBBulletinUpdate: NSObject
-@end
-
-@interface BBBulletinModifyUpdate: BBBulletinUpdate
-    + (id) updateWithBulletin:(id)arg1 feeds:(unsigned long long)feeds;
-@end
-
-@interface BBBulletinAddUpdate: BBBulletinUpdate
-    + (id) updateWithBulletin:(id)arg1 feeds:(unsigned long long)feeds shouldPlayLightsAndSirens:(bool)shouldPlayLightsAndSirens;
-@end
-
-@interface BBBulletinRemoveUpdate: BBBulletinUpdate
-    + (id) updateWithBulletin:(id)arg1 feeds:(unsigned long long)feeds shouldSync:(bool)shouldSync;
-@end
-
 @interface BBServer (beepserv)
     - (void) publishBulletin:(BBBulletin*)bulletin destinations:(unsigned long long)destinations;
-    - (void) _sendBulletinUpdate:(id)arg1;
+    - (id) _sectionInfoForSectionID:(NSString*)sectionID effective:(BOOL)effective;
 @end
 
 @interface BBBulletin (beepserv)
+    // Not sure if we need to set this for everything to behave normally but why not
     @property (nonatomic) bool clearable;
-    
-    - (void)setWantsFullscreenPresentation:(BOOL)loading;
 @end
 
+// This gets set from the BBServer init hook and allows us to send notifications
 static BBServer* notificationServer = nil;
+
+// Notifications must be dispatched from this queue or the process will crash
 static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
 
 %hook BBServer
@@ -53,9 +40,20 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
     - (void) dealloc {
         if (notificationServer == self) {
             notificationServer = nil;
-          }
+        }
         
-          %orig;
+        %orig;
+    }
+    
+    // As the app does not request notification permission, this
+    // would usually return nil for our app, but we make it return the
+    // section info for Settings which makes the notification display
+    - (id) _sectionInfoForSectionID:(NSString*)sectionID effective:(bool)effective {
+        if ([sectionID isEqual: @"com.beeper.beepserv.app"]) {
+            return [self _sectionInfoForSectionID: @"com.apple.Preferences" effective: effective];
+        }
+        
+        return %orig;
     }
 %end
 
@@ -71,26 +69,12 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
         }
         
         if (![notificationServer respondsToSelector: @selector(publishBulletin:destinations:)]) {
-            LOG(@"Not sending notification because BBServer does not respond to selectors");
+            LOG(@"Not sending notification because BBServer does not respond to selector");
             return;
         }
         
-        // We normally cannot send a notification as com.beeper.beepserv.app
-        // because we don't have notifications permission but
-        // the following hack works:
-        // 1. Send the notification as coming from the Settings app
-        // 2. Send an update notification with the updated section identifier
-        // 3. Send an update that deletes the original notification
-        // Note that this only changes the notification that is displayed on the
-        // lock screen because idk how to make the original notification not pop up
-        // and also if the updated notification is set to pop up it doesn't
-        // automatically hide itself after a few seconds
-        // => this is not ideal
-        
         BBBulletin* bulletin = [[%c(BBBulletin) alloc] init];
         
-        // The bulletin id has to stay the same in the original
-        // and updated notification
         bulletin.bulletinID = [[NSProcessInfo processInfo] globallyUniqueString];
         bulletin.recordID = [[NSProcessInfo processInfo] globallyUniqueString];
         bulletin.publisherBulletinID = [[NSProcessInfo processInfo] globallyUniqueString];
@@ -100,11 +84,10 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
         
         bulletin.title = @"beepserv";
         bulletin.message = message;
-        bulletin.sectionID = @"com.apple.Preferences";
+        bulletin.sectionID = @"com.beeper.beepserv.app";
         
-        // We don't add an action to the notification because
-        // the notification does not get automatically get deleted on tap
-        // bulletin.defaultAction = [%c(BBAction) actionWithLaunchBundleID: @"com.beeper.beepserv.app" callblock: nil];
+        // Open the beepserv app when the notification is tapped
+        bulletin.defaultAction = [%c(BBAction) actionWithLaunchBundleID: @"com.beeper.beepserv.app" callblock: nil];
         
         if ([bulletin respondsToSelector: @selector(setClearable:)]) {
             [bulletin setClearable: true];
@@ -114,20 +97,6 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
         dispatch_sync(notificationServerQueue, ^{
             LOG(@"Publishing notification");
             [notificationServer publishBulletin: bulletin destinations: 14];
-            
-            if (![notificationServer respondsToSelector: @selector(_sendBulletinUpdate:)]) {
-                LOG(@"Not updating notification because BBServer does not respond to selector");
-                return;
-            }
-            
-            BBBulletin* modifiedBulletin = [bulletin copy];
-            modifiedBulletin.sectionID = @"com.beeper.beepserv.app";
-            modifiedBulletin.recordID = [[NSProcessInfo processInfo] globallyUniqueString];
-            modifiedBulletin.publisherBulletinID = [[NSProcessInfo processInfo] globallyUniqueString];
-            
-            [notificationServer _sendBulletinUpdate: [%c(BBBulletinAddUpdate) updateWithBulletin: modifiedBulletin feeds: 14 shouldPlayLightsAndSirens: false]];
-            
-            [notificationServer _sendBulletinUpdate: [%c(BBBulletinRemoveUpdate) updateWithBulletin: bulletin feeds: 14 shouldSync: true]];
         });
     }
 @end
