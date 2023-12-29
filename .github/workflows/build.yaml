@@ -21,7 +21,7 @@ jobs:
           make clean package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1
 
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: ./packages/com.beeper.beepserv_*.deb
           name: phone-registration-provider
@@ -45,8 +45,20 @@ jobs:
           make clean package FINALPACKAGE=1
 
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: ./packages/com.beeper.beepserv_*.deb
           name: phone-registration-provider
           if-no-files-found: error
+  release:
+    needs: [theos-rootless, theos-rootful]
+    if: github.event_name == "push"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: $(git rev-parse --short HEAD)
+          files: com.beeper.beepserv_*.deb
