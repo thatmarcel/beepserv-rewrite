@@ -1,5 +1,6 @@
 #import "BPLogsViewController.h"
 #import "../Shared/Constants.h"
+#import "./Logging.h"
 
 @interface BPLogsViewController ()
     @property (retain) NSString* lastLogFileContent;
@@ -18,6 +19,14 @@
         } else {
             self.view.backgroundColor = [UIColor whiteColor];
         }
+        
+        UIBarButtonItem *clearLogsButtonItem = [[UIBarButtonItem alloc] 
+            initWithTitle: @"Clear logs"                                            
+            style: UIBarButtonItemStylePlain 
+            target: self 
+            action: @selector(handleClearLogsButtonPressed)
+        ];
+        self.navigationItem.rightBarButtonItem = clearLogsButtonItem;
         
         [self readLogsWithCompletion: nil];
     }
@@ -127,5 +136,16 @@
         [tableView deselectRowAtIndexPath: indexPath animated: true];
         
         UIPasteboard.generalPasteboard.string = logLines[indexPath.row];
+    }
+    
+    - (void) handleClearLogsButtonPressed {
+        NSError* fileDeletionError;
+        [NSFileManager.defaultManager removeItemAtPath: kLogFilePath error: &fileDeletionError];
+        
+        if (fileDeletionError) {
+            LOG(@"Deleting log file failed");
+        } else {
+            LOG(@"Logs cleared");
+        }
     }
 @end
