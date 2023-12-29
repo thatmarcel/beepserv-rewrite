@@ -154,7 +154,7 @@ static BPSocketConnectionManager* _sharedInstance;
     }
     
     - (void) handleSuccessfulRelayRegistrationWithCode:(NSString*)code secret:(NSString*)secret {
-        if (!wasConnectedBefore) {
+        if (!wasConnectedBefore || ![code isEqual: currentState.code]) {
             [BPNotificationHelper sendNotificationWithMessage: [
                 NSString stringWithFormat: @"Connected to relay with code: %@", code
             ]];
