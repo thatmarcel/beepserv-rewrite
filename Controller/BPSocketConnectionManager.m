@@ -30,6 +30,8 @@ static BPSocketConnectionManager* _sharedInstance;
         
         self.currentState = [BPState restoreOrCreate];
         
+        // When the app is opened, it sends a message
+        // letting us know that we should broadcast the current state
         [NSDistributedNotificationCenter.defaultCenter
             addObserverForName: kNotificationRequestStateUpdate
             object: nil
@@ -86,6 +88,7 @@ static BPSocketConnectionManager* _sharedInstance;
         
         [currentState updateConnected: false];
         
+        // Retry after a delay
         [NSTimer
             scheduledTimerWithTimeInterval: 5
             repeats: false
@@ -98,6 +101,8 @@ static BPSocketConnectionManager* _sharedInstance;
     - (void) handleReceivedMessageWithContents:(NSDictionary*)jsonContents {
         NSString* command = jsonContents[@"command"];
         
+        // If there are no switch cases in Objective-C,
+        // we just have to make our own
         ((void (^)()) @{
             @"ping" : ^{
                 [self sendPongMessage];

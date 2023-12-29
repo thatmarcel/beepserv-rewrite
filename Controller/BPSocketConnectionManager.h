@@ -5,8 +5,15 @@
 @interface BPSocketConnectionManager: NSObject <SRWebSocketDelegate>
     @property (retain) SRWebSocket* socket;
     @property (retain) BPState* currentState;
+    // Stores the id sent by the relay when it requested validation data,
+    // so we can send it to the relay once we have the data
     @property (retain) NSNumber* validationDataRequestIdentifier;
+    // The timestamp of the last time we sent identifiers to the relay,
+    // used to make sure we don't spam notifications if identifiers
+    // are requested multiple times in a row
     @property double lastIdentifiersSendTimestamp;
+    // Stores whether we were connected before so we don't
+    // send a new notification if we just reconnected
     @property bool wasConnectedBefore;
     // This is stored to make sure we don't spam the log file when
     // e.g. the device isn't connected to the internet
