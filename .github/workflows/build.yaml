@@ -52,7 +52,7 @@ jobs:
           if-no-files-found: error
   release:
     needs: [theos-rootless, theos-rootful]
-    if: github.event_name == "push"
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
