@@ -56,9 +56,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/download-artifact@v4
+
+      - name: Set tag name
+        id: tag
+        run: echo tag=$(git rev-parse --short HEAD) >> $GITHUB_OUTPUT
+
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: $(git rev-parse --short HEAD)
+          tag_name: ${{ steps.tag.outputs.tag }}
           files: com.beeper.beepserv_*.deb
