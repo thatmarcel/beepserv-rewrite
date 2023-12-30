@@ -187,12 +187,9 @@ static BPSocketConnectionManager* _sharedInstance;
             LOG(@"Serializing dictionary (%@) failed with error: %@", dictionary, jsonEncodingError);
         }
         
-        // so. for some incomprehensible reason, the precompiler for theos chokes when you include `{.*}`
-        // in a string literal, so we have to cheat and escape them by inserting their unicode codes as
-        // characters in format arguments
         NSString* stringToBeSent = (jsonEncodingError != nil)
-            ? [NSString stringWithFormat: @"%C \"error\": \"Couldn't serialize to JSON: %@\" %C", 0x007b, jsonEncodingError, 0x007b]
-            : [NSString.alloc initWithData: jsonData encoding: NSUTF8StringEncoding];
+            ? [NSString stringWithFormat: @"{ \"error\": \"Couldn't serialize to JSON: %@\" }", jsonEncodingError]
+            : [[NSString alloc] initWithData: jsonData encoding: NSUTF8StringEncoding];
             
         LOG(@"Sending dictionary string: %@", stringToBeSent);
         
