@@ -16,6 +16,8 @@ Also, this rewrite has only been tested on a device with a rootful jailbreak so 
 ## Building
 You need to have [Theos](https://theos.dev/docs/installation) installed.
 
+Also make sure Theos is up-to-date by running `$THEOS/bin/update-theos`.
+
 ### Rootful
 `make clean package FINALPACKAGE=1`
 
