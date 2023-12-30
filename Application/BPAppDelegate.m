@@ -9,6 +9,7 @@
         BPOverviewViewController* overviewViewController = [BPOverviewViewController new];
         BPLogsViewController* logsViewController = [BPLogsViewController new];
         
+        // These titles will be shown in the navigation bar and tab bar
         overviewViewController.title = @"Overview";
         logsViewController.title = @"Logs";
         
