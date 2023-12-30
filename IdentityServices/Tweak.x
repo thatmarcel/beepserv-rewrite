@@ -21,7 +21,7 @@
     }
     
     - (void) _notifyRegistrationFailure:(id)arg1 error:(long long)arg2 info:(id)arg3 {
-        LOG(@"IDSRegistrationController _notifyRegistrationFailure: %@", arg1);
+        LOG(@"IDSRegistrationController _notifyRegistrationFailure: %@, error code: %lld, info: %@", arg1, arg2, arg3);
         %orig;
     }
     
