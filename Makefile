@@ -25,4 +25,3 @@ before-all::
 after-install::
 		install.exec "uicache"
 		install.exec "sbreload"
-		install.exec "killall identityservicesd"
