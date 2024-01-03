@@ -16,7 +16,7 @@ This rewrite has been tested on iOS 14.5 (unc0ver, rootful) and iOS 16.7.4 (pale
 ## Building
 You need to have [Theos](https://theos.dev/docs/installation) installed.
 
-Also make sure Theos is up-to-date by running `$THEOS/bin/update-theos`.
+Also make sure Theos is up-to-date by running `$THEOS/bin/update-theos` (or `make update-theos`).
 
 ### Rootful
 `make clean package FINALPACKAGE=1`
