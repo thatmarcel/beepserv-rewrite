@@ -9,9 +9,23 @@
         BPOverviewViewController* overviewViewController = [BPOverviewViewController new];
         BPLogsViewController* logsViewController = [BPLogsViewController new];
         
-        // These titles will be shown in the navigation bar and tab bar
+        // The titles will be shown in the navigation bar and tab bar,
+        // the images will be shown in the tab bar
+        
         overviewViewController.title = @"Overview";
         logsViewController.title = @"Logs";
+        
+        overviewViewController.tabBarItem = [[UITabBarItem alloc]
+            initWithTitle: @"Overview"
+            image: [UIImage imageNamed: @"icon-overview-1"]
+            tag: 0
+        ];
+        
+        logsViewController.tabBarItem = [[UITabBarItem alloc]
+            initWithTitle: @"Logs"
+            image: [UIImage imageNamed: @"icon-logs-1"]
+            tag: 1
+        ];
         
         _overviewNavigationViewController = [[UINavigationController alloc] initWithRootViewController:
             overviewViewController
