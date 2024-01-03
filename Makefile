@@ -23,5 +23,5 @@ before-all::
 	cd SocketRocket && git apply -q ../SocketRocket.patch || :
 
 after-install::
-		install.exec "uicache"
+		install.exec "uicache -a"
 		install.exec "sbreload"
