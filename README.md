@@ -11,7 +11,7 @@ The tweak is now split into 3 parts:
 
 The app is pretty simple and does not have an icon yet.
 
-Also, this rewrite has only been tested on a device with a rootful jailbreak so far (but it should work on rootless configurations too?)
+This rewrite has been tested on iOS 14.5 (unc0ver, rootful) and iOS 16.7.4 (palera1n, rootless) so far.
 
 ## Building
 You need to have [Theos](https://theos.dev/docs/installation) installed.
