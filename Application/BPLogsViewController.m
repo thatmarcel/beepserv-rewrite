@@ -22,6 +22,12 @@
             self.view.backgroundColor = [UIColor whiteColor];
         }
         
+        [self addNavigationBarButtonItems];
+        
+        [self readLogsWithCompletion: nil];
+    }
+    
+    - (void) addNavigationBarButtonItems {
         UIBarButtonItem* clearLogsButtonItem = [[UIBarButtonItem alloc] 
             initWithTitle: @"Clear logs"                                            
             style: UIBarButtonItemStylePlain 
@@ -35,9 +41,7 @@
             target: self
             action: @selector(handleShareButtonPressed)
         ];  
-        self.navigationItem.leftBarButtonItem = shareButtonItem;  
-        
-        [self readLogsWithCompletion: nil];
+        self.navigationItem.leftBarButtonItem = shareButtonItem;
     }
     
     // We scroll to the bottom in viewWillAppear and viewDidAppear

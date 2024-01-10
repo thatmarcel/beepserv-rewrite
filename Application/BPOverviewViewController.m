@@ -42,6 +42,13 @@
             self.view.backgroundColor = [UIColor whiteColor];
         }
         
+        [self addNavigationBarButtonItems];
+        [self addViews];
+        [self addStateUpdateListener];
+        [self requestStateUpdate];
+    }
+    
+    - (void) addNavigationBarButtonItems {
         UIBarButtonItem* newRegistrationCodeRequestButtonItem = [[UIBarButtonItem alloc] 
             initWithTitle: @"Request new code"                                            
             style: UIBarButtonItemStylePlain 
@@ -49,10 +56,6 @@
             action: @selector(handleNewRegistrationCodeRequestButtonPressed)
         ];
         self.navigationItem.rightBarButtonItem = newRegistrationCodeRequestButtonItem;
-        
-        [self addViews];
-        [self addStateUpdateListener];
-        [self requestStateUpdate];
     }
     
     - (void) addViews {
