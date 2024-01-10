@@ -30,6 +30,13 @@
         ];
         self.navigationItem.rightBarButtonItem = clearLogsButtonItem;
         
+        UIBarButtonItem* shareButtonItem = [[UIBarButtonItem alloc]
+            initWithBarButtonSystemItem: UIBarButtonSystemItemAction
+            target: self
+            action: @selector(handleShareButtonPressed)
+        ];  
+        self.navigationItem.leftBarButtonItem = shareButtonItem;  
+        
         [self readLogsWithCompletion: nil];
     }
     
@@ -147,5 +154,20 @@
         } else {
             LOG(@"Logs cleared");
         }
+    }
+    
+    - (void) handleShareButtonPressed {
+        UIActivityViewController* activityViewController = [[UIActivityViewController alloc]
+            initWithActivityItems: @[[NSURL fileURLWithPath: kLogFilePath]]
+            applicationActivities: nil
+        ];
+        
+        activityViewController.popoverPresentationController.barButtonItem = self.navigationItem.leftBarButtonItem;
+        
+        // This currently crashes on an iPad on 14.5 jailbroken with unc0ver. Setting sourceView and sourceRect
+        // fixes this crash but the share sheet is not visible, no matter what the sourceRect is.
+        // It seems to work on other devices though, so until the cause of the crash has been determined, this is fine.
+        
+        [self presentViewController: activityViewController animated: true completion: nil];
     }
 @end
