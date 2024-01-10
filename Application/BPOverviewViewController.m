@@ -42,6 +42,14 @@
             self.view.backgroundColor = [UIColor whiteColor];
         }
         
+        UIBarButtonItem* newRegistrationCodeRequestButtonItem = [[UIBarButtonItem alloc] 
+            initWithTitle: @"Request new code"                                            
+            style: UIBarButtonItemStylePlain 
+            target: self 
+            action: @selector(handleNewRegistrationCodeRequestButtonPressed)
+        ];
+        self.navigationItem.rightBarButtonItem = newRegistrationCodeRequestButtonItem;
+        
         [self addViews];
         [self addStateUpdateListener];
         [self requestStateUpdate];
@@ -230,5 +238,14 @@
             noConnectionLabel.hidden = false;
             connectionDetailsContainer.hidden = true;
         }
+    }
+    
+    - (void) handleNewRegistrationCodeRequestButtonPressed {
+        // Request a new registration code from the Controller
+        [[NSDistributedNotificationCenter defaultCenter]
+            postNotificationName: kNotificationRequestNewRegistrationCode
+            object: nil
+            userInfo: nil
+        ];
     }
 @end

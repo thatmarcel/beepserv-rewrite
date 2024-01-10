@@ -37,6 +37,7 @@ static const NSString* kNotificationRequestValidationData = @"com.beeper.beepser
 static const NSString* kNotificationValidationDataResponse = @"com.beeper.beepserv/validationDataResponse";
 static const NSString* kNotificationRequestStateUpdate = @"com.beeper.beepserv/requestStateUpdate";
 static const NSString* kNotificationUpdateState = @"com.beeper.beepserv/updateState";
+static const NSString* kNotificationRequestNewRegistrationCode = @"com.beeper.beepserv/requestNewRegistrationCode";
 
 static const NSString* kPrefsFilePath = ROOT_PATH_NS(@"/var/mobile/.beepserv_prefs");
 

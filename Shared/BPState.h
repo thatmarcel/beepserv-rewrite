@@ -21,4 +21,6 @@
     - (NSDictionary*) serializeToDictionary;
     - (void) writeToDisk;
     - (void) broadcast;
+    
+    - (void) reset;
 @end

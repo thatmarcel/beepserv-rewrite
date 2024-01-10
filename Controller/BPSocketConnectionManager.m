@@ -41,6 +41,28 @@ static BPSocketConnectionManager* _sharedInstance;
             [self.currentState broadcast];
         }];
         
+        // Listen for requests from the app to generate a new registration code
+        [NSDistributedNotificationCenter.defaultCenter
+            addObserverForName: kNotificationRequestNewRegistrationCode
+            object: nil
+            queue: NSOperationQueue.mainQueue
+            usingBlock: ^(NSNotification* notification)
+        {
+            LOG(@"Handling request for new registration code");
+            
+            if (self.socket) {
+                LOG(@"Closing socket");
+                
+                [self.socket close];
+                self.socket = nil;
+            }
+            
+            LOG(@"Resetting state");
+            [self.currentState reset];
+            
+            [self startConnection];
+        }];
+        
         self.failedConnectionAttemptCountInARow = 0;
         
         return self;

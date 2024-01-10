@@ -134,4 +134,8 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
             
         return serializedState;
     }
+    
+    - (void) reset {
+        [self updateCode: nil secret: nil connected: false];
+    }
 @end

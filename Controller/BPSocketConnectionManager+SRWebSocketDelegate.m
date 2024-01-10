@@ -34,6 +34,11 @@
     }
     
     - (void) webSocket:(SRWebSocket*)webSocket didCloseWithCode:(NSInteger)code reason:(NSString*)reason wasClean:(BOOL)wasClean {
+        // Ignore intended disconnects (e.g. when requesting a new registration code)
+        if (wasClean) {
+            return;
+        }
+        
         [self handleConnectionError: [NSError errorWithDomain: kSuiteName code: code userInfo: @{
             @"Error Reason": [NSString stringWithFormat: @"Socket closed with reason: %@", reason]
         }]];
