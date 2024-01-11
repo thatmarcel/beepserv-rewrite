@@ -78,6 +78,8 @@ static BPSocketConnectionManager* _sharedInstance;
         
         self.failedConnectionAttemptCountInARow = 0;
         
+        [self startSendingPeriodicPingMessages];
+        
         return self;
     }
     
@@ -140,6 +142,9 @@ static BPSocketConnectionManager* _sharedInstance;
         // If there are no switch cases in Objective-C,
         // we just have to make our own
         ((void (^)()) @{
+            kCommandPong: ^{
+                // Don't do anything when a pong message was received
+            },
             kCommandPing: ^{
                 [self sendPongMessage];
             },
@@ -273,6 +278,10 @@ static BPSocketConnectionManager* _sharedInstance;
         [self sendMessageWithCommand: kCommandPong];
     }
     
+    - (void) sendPingMessage {
+        [self sendMessageWithCommand: kCommandPing];
+    }
+    
     - (void) sendIdentifiersMessageForId:(NSNumber*)requestIdentifier {
         NSDictionary* identifiers = [BPDeviceIdentifiers get];
         
@@ -320,5 +329,21 @@ static BPSocketConnectionManager* _sharedInstance;
         [BPNotificationSender sendNotificationWithMessage: [
             NSString stringWithFormat: @"Connected to relay with code: %@", code
         ]];
+    }
+    
+    // Send periodic ping messages to the relay to
+    // hopefully help keep the connection alive
+    - (void) startSendingPeriodicPingMessages {
+        [NSTimer
+            scheduledTimerWithTimeInterval: 60
+            repeats: true
+            block: ^(NSTimer* timer) {
+                if (!currentState.isConnected) {
+                    return;
+                }
+                
+                [self sendPingMessage];
+            }
+        ];
     }
 @end

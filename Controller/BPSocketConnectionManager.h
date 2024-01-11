@@ -41,6 +41,7 @@
     
     - (void) sendBeginMessage;
     - (void) sendPongMessage;
+    - (void) sendPingMessage;
     - (void) sendIdentifiersMessageForId:(NSNumber*)requestIdentifier;
     - (void) sendValidationData:(NSData*)validationData error:(NSError*)error;
     
