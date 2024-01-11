@@ -1,0 +1,9 @@
+#!/bin/bash
+
+killall identityservicesd || :
+
+if [ -L "/var/jb" ]; then
+	launchctl unload /var/jb/Library/LaunchDaemons/com.beeper.beepservd.plist
+else
+	launchctl unload /Library/LaunchDaemons/com.beeper.beepservd.plist
+fi

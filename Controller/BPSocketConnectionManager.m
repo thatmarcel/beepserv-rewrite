@@ -1,7 +1,7 @@
 #import "BPSocketConnectionManager.h"
 #import "BPDeviceIdentifiers.h"
 #import "BPValidationDataManager.h"
-#import "BPNotificationHelper.h"
+#import "BPNotificationSender.h"
 #import "../Shared/Constants.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
 #import "./Logging.h"
@@ -39,6 +39,19 @@ static BPSocketConnectionManager* _sharedInstance;
             usingBlock: ^(NSNotification* notification)
         {
             [self.currentState broadcast];
+        }];
+        
+        // Listen for SpringBoard restarts so the connection
+        // notification can be re-sent
+        [NSDistributedNotificationCenter.defaultCenter
+            addObserverForName: kNotificationSpringBoardRestarted
+            object: nil
+            queue: NSOperationQueue.mainQueue
+            usingBlock: ^(NSNotification* notification)
+        {
+            if (wasConnectedBefore && currentState.code) {
+                [self showConnectedNotificationWithCode: currentState.code];
+            }
         }];
         
         // Listen for requests from the app to generate a new registration code
@@ -185,9 +198,7 @@ static BPSocketConnectionManager* _sharedInstance;
         // Only send a notification (bulletin) if we have a new code
         // because brief disconnects can happen
         if (!wasConnectedBefore || ![code isEqual: currentState.code]) {
-            [BPNotificationHelper sendNotificationWithMessage: [
-                NSString stringWithFormat: @"Connected to relay with code: %@", code
-            ]];
+            [self showConnectedNotificationWithCode: code];
         }
         
         wasConnectedBefore = true;
@@ -270,7 +281,7 @@ static BPSocketConnectionManager* _sharedInstance;
         double currentTimestamp = [NSDate.date timeIntervalSince1970];
         
         if (!lastIdentifiersSendTimestamp || (lastIdentifiersSendTimestamp + 10) < currentTimestamp) {
-            [BPNotificationHelper sendNotificationWithMessage: @"Starting registration flow"];
+            [BPNotificationSender sendNotificationWithMessage: @"Starting registration flow"];
         }
         
         lastIdentifiersSendTimestamp = currentTimestamp;
@@ -303,5 +314,11 @@ static BPSocketConnectionManager* _sharedInstance;
         [self sendMessageWithCommand: kCommandResponse data: data id: validationDataRequestIdentifier];
         
         validationDataRequestIdentifier = nil;
+    }
+    
+    - (void) showConnectedNotificationWithCode:(NSString*)code {
+        [BPNotificationSender sendNotificationWithMessage: [
+            NSString stringWithFormat: @"Connected to relay with code: %@", code
+        ]];
     }
 @end

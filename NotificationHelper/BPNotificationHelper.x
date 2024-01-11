@@ -1,6 +1,6 @@
 #import "BPNotificationHelper.h"
 #import "./Logging.h"
-#import "../Shared/BPPrefs.h"
+#import "../Shared/NSDistributedNotificationCenter.h"
 
 #import <BulletinBoard/BBAction.h>
 #import <BulletinBoard/BBBulletin.h>
@@ -59,10 +59,6 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
 
 @implementation BPNotificationHelper
     + (void) sendNotificationWithMessage:(NSString*)message {
-        if (![BPPrefs shouldShowNotifications]) {
-            return;
-        }
-        
         if (!notificationServer) {
             LOG(@"Not sending notification because BBServer is not set");
             return;
@@ -100,3 +96,39 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
         });
     }
 @end
+
+%hook SpringBoard
+    - (void) applicationDidFinishLaunching:(id)arg1 {
+        %orig;
+        
+        LOG(@"SpringBoard launched");
+        
+        // Wait a bit to make sure SpringBoard has fully initialized
+        [NSTimer
+            scheduledTimerWithTimeInterval: 5
+            repeats: false
+            block: ^(NSTimer* timer) {
+                // Wait for command to send a notification bulletin (from the Controller)
+                [NSDistributedNotificationCenter.defaultCenter
+                    addObserverForName: kNotificationSendNotificationBulletin
+                    object: nil
+                    queue: NSOperationQueue.mainQueue
+                    usingBlock: ^(NSNotification* notification)
+                {
+                    NSDictionary* userInfo = notification.userInfo;
+                    NSString* messageText = userInfo[kMessageText];
+                    
+                    [BPNotificationHelper sendNotificationWithMessage: messageText];
+                }];
+                
+                // Tell the Controller that SpringBoard was restarted so it can re-send
+                // the connection notification
+                [NSDistributedNotificationCenter.defaultCenter
+                    postNotificationName: kNotificationSpringBoardRestarted
+                    object: nil
+                    userInfo: nil
+                ];
+            }
+        ];
+    }
+%end

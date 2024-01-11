@@ -8,6 +8,7 @@ static NSString* kLogFilePath = ROOT_PATH_NS(@"/var/mobile/beepserv.log");
 static NSString* kModuleNameApplication = @"Application";
 static NSString* kModuleNameController = @"Controller";
 static NSString* kModuleNameIdentityServices = @"IdentityServices";
+static NSString* kModuleNameNotificationHelper = @"NotificationHelper";
 
 static const NSString* kDefaultRelayURL = @"https://registration-relay.beeper.com/api/v1/provider";
 
@@ -33,11 +34,15 @@ static const NSString* kError = @"error";
 static const NSString* kValidationData = @"validationData";
 static const NSString* kValidationDataExpiryTimestamp = @"validationDataExpiryTimestamp";
 
+static const NSString* kMessageText = @"messageText";
+
 static const NSString* kNotificationRequestValidationData = @"com.beeper.beepserv/requestValidationData";
 static const NSString* kNotificationValidationDataResponse = @"com.beeper.beepserv/validationDataResponse";
 static const NSString* kNotificationRequestStateUpdate = @"com.beeper.beepserv/requestStateUpdate";
 static const NSString* kNotificationUpdateState = @"com.beeper.beepserv/updateState";
 static const NSString* kNotificationRequestNewRegistrationCode = @"com.beeper.beepserv/requestNewRegistrationCode";
+static const NSString* kNotificationSendNotificationBulletin = @"com.beeper.beepserv/sendNotificationBulletin";
+static const NSString* kNotificationSpringBoardRestarted = @"com.beeper.beepserv/springBoardRestarted";
 
 static const NSString* kPrefsFilePath = ROOT_PATH_NS(@"/var/mobile/.beepserv_prefs");
 

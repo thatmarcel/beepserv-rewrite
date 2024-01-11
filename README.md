@@ -4,14 +4,13 @@ A tweak for jailbroken iPhones that can be connected with Beeper Mini to provide
 ## Note
 This is a rewrite of the original [beepserv](https://github.com/beeper/phone-registration-provider) with some code from the original.
 
-The tweak is now split into 3 parts:
+The tweak is now split into 4 parts:
 - **Application**: An app that shows the registration code, logs, and allows state notifications to be turned on or off
-- **Controller**: This hooks into `SpringBoard` (which makes sending notifications easier) and manages basically everything, including the relay connection
+- **Controller**: A launch daemon that manages basically everything, including the relay connection
+- **NotificationHelper**: This hooks into `SpringBoard` and sends local notifications
 - **IdentityServices**: The part that hooks into `identityservicesd` and handles the generation of validation data
 
 The app is pretty simple and does not have an icon yet.
-
-This rewrite has been tested on iOS 14.5 (unc0ver, rootful) and iOS 16.7.4 (palera1n, rootless) so far.
 
 ## Building
 You need to have [Theos](https://theos.dev/docs/installation) installed.

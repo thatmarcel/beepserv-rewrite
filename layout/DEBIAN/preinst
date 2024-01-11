@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ -L "/var/jb" ]; then
+	launchctl unload /var/jb/Library/LaunchDaemons/com.beeper.beepservd.plist 2>&1 > /dev/null || :
+else
+	launchctl unload /Library/LaunchDaemons/com.beeper.beepservd.plist 2>&1 > /dev/null || :
+fi

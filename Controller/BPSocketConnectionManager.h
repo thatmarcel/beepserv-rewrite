@@ -43,4 +43,6 @@
     - (void) sendPongMessage;
     - (void) sendIdentifiersMessageForId:(NSNumber*)requestIdentifier;
     - (void) sendValidationData:(NSData*)validationData error:(NSError*)error;
+    
+    - (void) showConnectedNotificationWithCode:(NSString*)code;
 @end

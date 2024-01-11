@@ -1,6 +1,6 @@
 #import "BPValidationDataManager.h"
 #import "BPSocketConnectionManager.h"
-#import "BPNotificationHelper.h"
+#import "BPNotificationSender.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
 #import "./Logging.h"
 
@@ -47,14 +47,14 @@ BPValidationDataManager* _sharedInstance;
     
     - (void) handleResponseWithValidationData:(NSData*)validationData validationDataExpiryTimestamp:(double)validationDataExpiryTimestamp error:(NSError*)error {
         if (error) {
-            [BPNotificationHelper sendNotificationWithMessage: [NSString stringWithFormat: @"Retrieving validation data failed with error: %@", error]];
+            [BPNotificationSender sendNotificationWithMessage: [NSString stringWithFormat: @"Retrieving validation data failed with error: %@", error]];
             
             LOG(@"Retrieving validation data failed with error: %@", error);
         } else {
             cachedValidationData = validationData;
             cachedValidationDataExpiryTimestamp = validationDataExpiryTimestamp;
             
-            [BPNotificationHelper sendNotificationWithMessage: @"Successfully retrieved validation data"];
+            [BPNotificationSender sendNotificationWithMessage: @"Successfully retrieved validation data"];
             
             LOG(@"Successfully retrieved validation data");
         }
@@ -65,7 +65,7 @@ BPValidationDataManager* _sharedInstance;
     - (void) request {
         LOG(@"Requesting new validation data");
         
-        [BPNotificationHelper sendNotificationWithMessage: @"Requesting new validation data"];
+        [BPNotificationSender sendNotificationWithMessage: @"Requesting new validation data"];
         
         // Send a validation data request to IdentityServices
         [NSDistributedNotificationCenter.defaultCenter
@@ -84,7 +84,7 @@ BPValidationDataManager* _sharedInstance;
         
         LOG(@"Using cached validation data");
         
-        [BPNotificationHelper sendNotificationWithMessage: @"Using cached validation data"];
+        [BPNotificationSender sendNotificationWithMessage: @"Using cached validation data"];
         
         return cachedValidationData;
     }
