@@ -14,7 +14,14 @@
     }
     
     - (void) webSocket:(SRWebSocket*)webSocket didReceiveMessageWithString:(NSString*)message {
-        LOG(@"Received string message: %@", message);
+        if (!message) {
+            return;
+        }
+        
+        // Don't log ping response (pong) messages
+        if (![message containsString: @"\"pong\""]) {
+            LOG(@"Received string message: %@", message);
+        }
         
         NSData* messageData = [message dataUsingEncoding: NSUTF8StringEncoding];
         

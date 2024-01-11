@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import "SRWebSocket.h"
 #import "../Shared/BPState.h"
+#import "Headers/PCSimpleTimer.h"
 
 @interface BPSocketConnectionManager: NSObject <SRWebSocketDelegate>
     @property (retain) SRWebSocket* socket;
@@ -18,6 +19,10 @@
     // This is stored to make sure we don't spam the log file when
     // e.g. the device isn't connected to the internet
     @property int failedConnectionAttemptCountInARow;
+    // The timer responsible for retrying the connection after a delay
+    @property (retain) PCSimpleTimer* retryTimer;
+    // The timer responsible for periodically sending ping messages
+    @property (retain) PCSimpleTimer* pingTimer;
     
     + (instancetype) sharedInstance;
     

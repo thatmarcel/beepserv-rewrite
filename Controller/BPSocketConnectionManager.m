@@ -6,7 +6,6 @@
 #import "../Shared/Constants.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
 #import "./Logging.h"
-#import "Headers/PCSimpleTimer.h"
 #import <rootless.h>
 
 static BPSocketConnectionManager* _sharedInstance;
@@ -18,6 +17,8 @@ static BPSocketConnectionManager* _sharedInstance;
     @synthesize lastIdentifiersSendTimestamp;
     @synthesize wasConnectedBefore;
     @synthesize failedConnectionAttemptCountInARow;
+    @synthesize retryTimer;
+    @synthesize pingTimer;
     
     + (instancetype) sharedInstance {
         if (!_sharedInstance) {
@@ -90,6 +91,12 @@ static BPSocketConnectionManager* _sharedInstance;
             LOG(@"Starting connection");
         }
         
+        // Not sure whether this is necessary, but better safe than sorry?
+        if (retryTimer) {
+            [retryTimer invalidate];
+            retryTimer = nil;
+        }
+        
         @try {
             NSString* filePath = ROOT_PATH_NS(@"/.beepserv_wsurl");
             NSString* relayURL = [NSString stringWithContentsOfFile: filePath encoding: NSUTF8StringEncoding error: nil];
@@ -132,7 +139,7 @@ static BPSocketConnectionManager* _sharedInstance;
         // (Not using a normal NSTimer because it
         // does not always fire during sleep)
         
-        PCSimpleTimer* retryTimer = [BPTimerHelper
+        retryTimer = [BPTimerHelper
             createTimerWithTimeInterval: 5
             serviceIdentifier: kSuiteName
             target: self
@@ -236,7 +243,10 @@ static BPSocketConnectionManager* _sharedInstance;
             ? [NSString stringWithFormat: @"{ \"error\": \"Couldn't serialize to JSON: %@\" }", jsonEncodingError]
             : [[NSString alloc] initWithData: jsonData encoding: NSUTF8StringEncoding];
             
-        LOG(@"Sending dictionary string: %@", stringToBeSent);
+        // Don't log ping messages
+        if (![stringToBeSent containsString: @"\"ping\""]) {
+            LOG(@"Sending dictionary string: %@", stringToBeSent);
+        }
         
         NSError* sendingError;
         [socket sendString: stringToBeSent error: &sendingError];
@@ -346,6 +356,9 @@ static BPSocketConnectionManager* _sharedInstance;
             [self sendPingMessage];
         }
         
+        // Not sure whether this is necessary, but better safe than sorry?
+        [pingTimer invalidate];
+        
         // The timer does not repeat so we have to start a new one
         [self startPingMessageTimer];
     }
@@ -353,8 +366,12 @@ static BPSocketConnectionManager* _sharedInstance;
     - (void) startPingMessageTimer {
         // Not using a normal NSTimer because it
         // does not always fire during sleep
-        PCSimpleTimer* pingTimer = [BPTimerHelper
-            createTimerWithTimeInterval: 60
+        //
+        // Note that when setting the time interval
+        // to e.g. 60 seconds, it does not reliably
+        // get called for whatever reason
+        pingTimer = [BPTimerHelper
+            createTimerWithTimeInterval: 30
             serviceIdentifier: kSuiteName
             target: self
             selector: @selector(handlePingTimerFired)
