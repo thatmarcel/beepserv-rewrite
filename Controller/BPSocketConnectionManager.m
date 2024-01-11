@@ -49,8 +49,8 @@ static BPSocketConnectionManager* _sharedInstance;
             queue: NSOperationQueue.mainQueue
             usingBlock: ^(NSNotification* notification)
         {
-            if (wasConnectedBefore && currentState.code) {
-                [self showConnectedNotificationWithCode: currentState.code];
+            if (self.currentState.isConnected && self.currentState.code) {
+                [self showConnectedNotificationWithCode: self.currentState.code];
             }
         }];
         
