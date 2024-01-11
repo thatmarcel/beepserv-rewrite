@@ -46,4 +46,7 @@
     - (void) sendValidationData:(NSData*)validationData error:(NSError*)error;
     
     - (void) showConnectedNotificationWithCode:(NSString*)code;
+    
+    - (void) handlePingTimerFired;
+    - (void) startPingMessageTimer;
 @end

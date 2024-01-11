@@ -2,9 +2,11 @@
 #import "BPDeviceIdentifiers.h"
 #import "BPValidationDataManager.h"
 #import "BPNotificationSender.h"
+#import "BPTimerHelper.h"
 #import "../Shared/Constants.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
 #import "./Logging.h"
+#import "Headers/PCSimpleTimer.h"
 #import <rootless.h>
 
 static BPSocketConnectionManager* _sharedInstance;
@@ -78,7 +80,7 @@ static BPSocketConnectionManager* _sharedInstance;
         
         self.failedConnectionAttemptCountInARow = 0;
         
-        [self startSendingPeriodicPingMessages];
+        [self startPingMessageTimer];
         
         return self;
     }
@@ -127,13 +129,18 @@ static BPSocketConnectionManager* _sharedInstance;
         [currentState updateConnected: false];
         
         // Retry after a delay
-        [NSTimer
-            scheduledTimerWithTimeInterval: 5
-            repeats: false
-            block: ^(NSTimer* timer) {
-                [self startConnection];
-            }
+        // (Not using a normal NSTimer because it
+        // does not always fire during sleep)
+        
+        PCSimpleTimer* retryTimer = [BPTimerHelper
+            createTimerWithTimeInterval: 5
+            serviceIdentifier: kSuiteName
+            target: self
+            selector: @selector(startConnection)
+            userInfo: nil
         ];
+        
+        [retryTimer scheduleInRunLoop: [NSRunLoop mainRunLoop]];
     }
     
     - (void) handleReceivedMessageWithContents:(NSDictionary*)jsonContents {
@@ -333,17 +340,27 @@ static BPSocketConnectionManager* _sharedInstance;
     
     // Send periodic ping messages to the relay to
     // hopefully help keep the connection alive
-    - (void) startSendingPeriodicPingMessages {
-        [NSTimer
-            scheduledTimerWithTimeInterval: 60
-            repeats: true
-            block: ^(NSTimer* timer) {
-                if (!currentState.isConnected) {
-                    return;
-                }
-                
-                [self sendPingMessage];
-            }
+    
+    - (void) handlePingTimerFired {
+        if (self.currentState.isConnected) {
+            [self sendPingMessage];
+        }
+        
+        // The timer does not repeat so we have to start a new one
+        [self startPingMessageTimer];
+    }
+    
+    - (void) startPingMessageTimer {
+        // Not using a normal NSTimer because it
+        // does not always fire during sleep
+        PCSimpleTimer* pingTimer = [BPTimerHelper
+            createTimerWithTimeInterval: 60
+            serviceIdentifier: kSuiteName
+            target: self
+            selector: @selector(handlePingTimerFired)
+            userInfo: nil
         ];
+        
+        [pingTimer scheduleInRunLoop: [NSRunLoop mainRunLoop]];
     }
 @end
