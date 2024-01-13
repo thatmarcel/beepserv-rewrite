@@ -149,7 +149,10 @@
         activityIndicatorView = [[UIActivityIndicatorView alloc] init];
         activityIndicatorView.translatesAutoresizingMaskIntoConstraints = false;
         activityIndicatorView.hidesWhenStopped = true;
-        activityIndicatorView.activityIndicatorViewStyle = UIActivityIndicatorViewStyleLarge;
+        
+        if (@available(iOS 13, *)) {
+            activityIndicatorView.activityIndicatorViewStyle = UIActivityIndicatorViewStyleLarge;
+        }
         
         [self.view addSubview: activityIndicatorView];
         

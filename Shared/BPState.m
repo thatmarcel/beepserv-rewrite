@@ -32,9 +32,16 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
             
             NSError* fileReadingError;
             NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", alternativeStateFilePath]];
-            NSDictionary* serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
             
-            if (fileReadingError) {
+            NSDictionary* serializedState;
+            
+            if (@available(iOS 11, *)) {
+                serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
+            } else {
+                serializedState = [NSDictionary dictionaryWithContentsOfURL: url];
+            }
+            
+            if (fileReadingError || !serializedState) {
                 LOG(@"Reading alternative state file failed with error: %@", fileReadingError);
             } else {
                 NSError* fileDeletionError;
@@ -53,9 +60,16 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
             
             NSError* fileReadingError;
             NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", stateFilePath]];
-            NSDictionary* serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
             
-            if (fileReadingError) {
+            NSDictionary* serializedState;
+            
+            if (@available(iOS 11, *)) {
+                serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: &fileReadingError];
+            } else {
+                serializedState = [NSDictionary dictionaryWithContentsOfURL: url];
+            }
+            
+            if (fileReadingError || !serializedState) {
                 LOG(@"Reading state file failed with error: %@", fileReadingError);
             } else {
                 return [BPState createFromDictionary: serializedState];
@@ -101,7 +115,16 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
         
         NSError* writingError;
         NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", stateFilePath]];
-        [serializedState writeToURL: url error: &writingError];
+        
+        if (@available(iOS 11, *)) {
+            [serializedState writeToURL: url error: &writingError];
+        } else {
+            if (![serializedState writeToURL: url atomically: true]) {
+                writingError = [NSError errorWithDomain: kSuiteName code: 0 userInfo: @{
+                    @"Error Reason": @"Unknown"
+                }];
+            }
+        }
         
         if (writingError) {
             LOG(@"Writing state to disk failed with error: %@", writingError);

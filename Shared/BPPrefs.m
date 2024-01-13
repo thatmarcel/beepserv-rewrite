@@ -10,19 +10,36 @@ void bp_log_impl(NSString* moduleName, NSString* logString);
 @implementation BPPrefs
     + (BOOL) shouldShowNotifications {
         NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", kPrefsFilePath]];
-        NSDictionary* serializedState = [NSDictionary dictionaryWithContentsOfURL: url error: nil];
         
-        return (serializedState && serializedState[kPrefsKeyShouldShowNotifications])
-            ? [(NSNumber*) serializedState[kPrefsKeyShouldShowNotifications] boolValue]
+        NSDictionary* prefsDict;
+        
+        if (@available(iOS 11, *)) {
+            prefsDict = [NSDictionary dictionaryWithContentsOfURL: url error: nil];
+        } else {
+            prefsDict = [NSDictionary dictionaryWithContentsOfURL: url];
+        }
+        
+        return (prefsDict && prefsDict[kPrefsKeyShouldShowNotifications])
+            ? [(NSNumber*) prefsDict[kPrefsKeyShouldShowNotifications] boolValue]
             : true;
     }
     
     + (void) setShouldShowNotifications:(BOOL)shouldShowNotificationsFromNowOn {
         NSError* writingError;
         NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", kPrefsFilePath]];
-        [@{
+        NSDictionary* prefsDict = @{
             kPrefsKeyShouldShowNotifications: [NSNumber numberWithBool: shouldShowNotificationsFromNowOn]
-        } writeToURL: url error: &writingError];
+        };
+        
+        if (@available(iOS 11, *)) {
+            [prefsDict writeToURL: url error: &writingError];
+        } else {
+            if (![prefsDict writeToURL: url atomically: true]) {
+                writingError = [NSError errorWithDomain: kSuiteName code: 0 userInfo: @{
+                    @"Error Reason": @"Unknown"
+                }];
+            }
+        }
         
         if (writingError) {
             LOG(@"Writing whether notifications should be shown to disk failed with error: %@", writingError);
