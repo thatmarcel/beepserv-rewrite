@@ -31,3 +31,18 @@ This tweak should automatically run in the background, connected to Beeper's rel
 To start this registration process, open the beepserv app, and enter the displayed registration code into Beeper Mini, and it should automatically start the registration process.
 
 If you cannot find the code, SSH into the device and run `cat /var/mobile/.beepserv_state` (rootful) or `cat /var/jb/var/mobile/.beepserv_state` (rootless) to view the registration code.
+
+### Using a self-hosted relay
+If you are hosting your own [registration relay](https://github.com/beeper/registration-relay) server instead of using the default one, run the commands below on your device (replacing the URL with the one you want to use).
+
+#### Rootful
+1. `launchctl unload /Library/LaunchDaemons/com.beeper.beepservd.plist`
+2. `echo "https://registration-relay.beeper.com/api/v1/provider" > /var/mobile/.beepserv_relay_url`
+3. `rm -f /var/mobile/.beepserv_state`
+4. `launchctl load /Library/LaunchDaemons/com.beeper.beepservd.plist`
+
+#### Rootless
+1. `launchctl unload /var/jb/Library/LaunchDaemons/com.beeper.beepservd.plist`
+2. `echo "https://registration-relay.beeper.com/api/v1/provider" > /var/jb/var/mobile/.beepserv_relay_url`
+3. `rm -f /var/jb/var/mobile/.beepserv_state`
+4. `launchctl load /var/jb/Library/LaunchDaemons/com.beeper.beepservd.plist`
