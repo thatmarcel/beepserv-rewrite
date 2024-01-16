@@ -3,6 +3,8 @@
 #import "Headers/IDSDAccount.h"
 #import "Headers/IDSDAccountController.h"
 
+bool isRequestingValidationData = false;
+
 // Logging events that could be useful for debugging
 %hook IDSRegistrationController
     - (void) _notifyRegistrationStarting:(id)arg1 {
@@ -53,12 +55,18 @@
                 kValidationDataExpiryTimestamp: [NSNumber numberWithDouble: validationDataExpiryTimestamp]
             }
         ];
-
-        %orig;
+        
+        if (isRequestingValidationData) {
+            %orig;
+        }
+        
+        isRequestingValidationData = false;
     }
 %end
 
 void generateValidationData() {
+    isRequestingValidationData = true;
+    
     LOG(@"Trying to generate validation data");
     
     IDSDAccountController* controller = [%c(IDSDAccountController) sharedInstance];
@@ -87,6 +95,8 @@ void generateValidationData() {
         
         return;
     }
+    
+    isRequestingValidationData = false;
     
     // Notify the Controller about not having found an account
     [NSDistributedNotificationCenter.defaultCenter
