@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $1 = "upgrade" ]; then
+	exit 0
+fi
+
+if [ -L "/var/jb" ]; then
+	rm -f /var/jb/var/mobile/.beepserv_state
+	rm -f /var/jb/var/mobile/.beepserv_prefs
+else
+	rm -f /var/mobile/.beepserv_state
+	rm -f /var/mobile/.beepserv_prefs
+fi
