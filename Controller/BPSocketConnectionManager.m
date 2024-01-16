@@ -8,6 +8,9 @@
 #import "./Logging.h"
 #import <rootless.h>
 
+static NSString* relayURLFilePath = ROOT_PATH_NS(@"/var/mobile/.beepserv_relay_url");
+static NSString* alternativeRelayURLFilePath = ROOT_PATH_NS(@"/.beepserv_wsurl");
+
 static BPSocketConnectionManager* _sharedInstance;
 
 @implementation BPSocketConnectionManager
@@ -98,9 +101,15 @@ static BPSocketConnectionManager* _sharedInstance;
         }
         
         @try {
-            NSString* filePath = ROOT_PATH_NS(@"/.beepserv_wsurl");
-            NSString* relayURL = [NSString stringWithContentsOfFile: filePath encoding: NSUTF8StringEncoding error: nil];
-            relayURL = relayURL ?: kDefaultRelayURL;
+            NSString* relayURL = [NSString
+                stringWithContentsOfFile: relayURLFilePath
+                encoding: NSUTF8StringEncoding
+                error: nil
+            ] ?: [NSString
+                stringWithContentsOfFile: alternativeRelayURLFilePath
+                encoding: NSUTF8StringEncoding
+                error: nil
+            ] ?: kDefaultRelayURL;
             relayURL = [relayURL stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
             
             NSURLRequest* request = [NSURLRequest requestWithURL: [NSURL URLWithString: relayURL]];
