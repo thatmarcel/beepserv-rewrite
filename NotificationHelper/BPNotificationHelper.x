@@ -8,6 +8,9 @@
 
 @interface BBServer (beepserv)
     - (void) publishBulletin:(BBBulletin*)bulletin destinations:(unsigned long long)destinations;
+    
+    - (void) publishBulletin:(BBBulletin*)bulletin destinations:(unsigned long long)destinations alwaysToLockScreen:(bool)alwaysToLockScreen;
+    
     - (id) _sectionInfoForSectionID:(NSString*)sectionID effective:(BOOL)effective;
 @end
 
@@ -64,9 +67,15 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
             return;
         }
         
+        bool shouldUseOtherPublishMethod = false;
+        
         if (![notificationServer respondsToSelector: @selector(publishBulletin:destinations:)]) {
-            LOG(@"Not sending notification because BBServer does not respond to selector");
-            return;
+            if ([notificationServer respondsToSelector: @selector(publishBulletin:destinations:alwaysToLockScreen:)]) {
+                shouldUseOtherPublishMethod = true;
+            } else {
+                LOG(@"Not sending notification because BBServer does not respond to selector");
+                return;
+            }
         }
         
         BBBulletin* bulletin = [[%c(BBBulletin) alloc] init];
@@ -92,7 +101,12 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
         LOG(@"Dispatching in notification server queue");
         dispatch_sync(notificationServerQueue, ^{
             LOG(@"Publishing notification");
-            [notificationServer publishBulletin: bulletin destinations: 14];
+            
+            if (shouldUseOtherPublishMethod) {
+                [notificationServer publishBulletin: bulletin destinations: 14 alwaysToLockScreen: false];
+            } else {
+                [notificationServer publishBulletin: bulletin destinations: 14];
+            }
         });
     }
 @end
