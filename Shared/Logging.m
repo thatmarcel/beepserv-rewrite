@@ -1,4 +1,5 @@
 #import "./Constants.h"
+#import "../Shared/NSDistributedNotificationCenter.h"
 
 NSRegularExpression *bp_relay_secret_replacement_regex;
 NSRegularExpression *bp_relay_code_replacement_regex;
@@ -100,8 +101,25 @@ NSString* bp_replace_secrets_in_log_string(NSString* logString) {
 // This method is called by the module-specific Logging.h LOG macros with the name of the module
 // so we can easily see which module is logging without having to duplicate this code
 
-void bp_log_impl(NSString* moduleName, NSString* logString) {
-    NSLog(@"[Beepserv] %@: %@", moduleName, logString);
+// On rootful devices, identityservicesd seems to not be allowed
+// to write to the log file so we send the log entry to the
+// Controller which then writes it to the log file
+//
+// shouldSendLogsFromIdentityServicesIfNeeded is false if it has been called by
+// the Controller when relaying a message from IdentityServices
+void bp_log_impl_internal(NSString* moduleName, NSString* logString, bool shouldSendLogsFromIdentityServicesIfNeeded) {
+    if (shouldSendLogsFromIdentityServicesIfNeeded) {
+        NSLog(@"[Beepserv] %@: %@", moduleName, logString);
+    }
+    
+    if (![@"/var/jb" isEqualToString: @THEOS_PACKAGE_INSTALL_PREFIX] && shouldSendLogsFromIdentityServicesIfNeeded && [moduleName isEqualToString: kModuleNameIdentityServices]) {
+        [NSDistributedNotificationCenter.defaultCenter
+            postNotificationName: kNotificationLogEntryFromIdentityServices
+            object: nil
+            userInfo: @{ kMessageText: logString }
+        ];
+        return;
+    }
     
     NSFileManager* fileManager = NSFileManager.defaultManager;
     
@@ -119,4 +137,8 @@ void bp_log_impl(NSString* moduleName, NSString* logString) {
     [fileHandle seekToEndOfFile];
     [fileHandle writeData: [[NSString stringWithFormat: @"%@: [%@] %@\n", dateString, moduleName, [logString stringByReplacingOccurrencesOfString: @"\n" withString: @" "]] dataUsingEncoding: NSUTF8StringEncoding]];
     [fileHandle closeFile];
+}
+
+void bp_log_impl(NSString* moduleName, NSString* logString) {
+    bp_log_impl_internal(moduleName, logString, true);
 }
