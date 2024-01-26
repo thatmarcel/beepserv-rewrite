@@ -110,6 +110,13 @@ void bp_start_validation_data_request() {
     {
         LOG(@"Received request for validation data");
         
+        // Notify the Controller that we have received the request
+        [NSDistributedNotificationCenter.defaultCenter
+            postNotificationName: kNotificationRequestValidationDataAcknowledgement
+            object: nil
+            userInfo: nil
+        ];
+        
         bp_start_validation_data_request();
     }];
     

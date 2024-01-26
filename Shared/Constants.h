@@ -37,6 +37,7 @@ static const NSString* kValidationDataExpiryTimestamp = @"validationDataExpiryTi
 static const NSString* kMessageText = @"messageText";
 
 static const NSString* kNotificationRequestValidationData = @"com.beeper.beepserv/requestValidationData";
+static const NSString* kNotificationRequestValidationDataAcknowledgement = @"com.beeper.beepserv/requestValidationDataAcknowledgement";
 static const NSString* kNotificationValidationDataResponse = @"com.beeper.beepserv/validationDataResponse";
 static const NSString* kNotificationRequestStateUpdate = @"com.beeper.beepserv/requestStateUpdate";
 static const NSString* kNotificationUpdateState = @"com.beeper.beepserv/updateState";

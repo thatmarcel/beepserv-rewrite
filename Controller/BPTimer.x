@@ -1,4 +1,4 @@
-#import "BPTimerHelper.h"
+#import "BPTimer.h"
 #import "../Shared/Constants.h"
 
 // This class schedules an NSTimer, PCSimpleTimer
@@ -6,18 +6,18 @@
 // NSTimer does not (reliably) fire during device sleep,
 // PCSimpleTimer seems to have issues on some devices,
 // and dispatch_after is here just for good measure
-@implementation BPTimerHelper
+@implementation BPTimer
 	@synthesize completionBlock;
 	@synthesize hasFiredAlready;
 	
 	@synthesize pcSimpleTimer;
 	@synthesize nsTimer;
 	
-	+ (BPTimerHelper*) scheduleTimerWithTimeInterval:(double)timeInterval completion:(BPTimerHelperCompletionBlock)completionBlock {
-		return [[BPTimerHelper alloc] initWithTimeInterval: timeInterval completion: completionBlock];
+	+ (BPTimer*) scheduleTimerWithTimeInterval:(double)timeInterval completion:(BPTimerCompletionBlock)completionBlock {
+		return [[BPTimer alloc] initWithTimeInterval: timeInterval completion: completionBlock];
 	}
 	
-	- (instancetype) initWithTimeInterval:(double)timeInterval completion:(BPTimerHelperCompletionBlock)completion {
+	- (instancetype) initWithTimeInterval:(double)timeInterval completion:(BPTimerCompletionBlock)completion {
 		self = [super init];
 		
 		self.completionBlock = completion;

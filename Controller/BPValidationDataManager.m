@@ -9,6 +9,7 @@ BPValidationDataManager* _sharedInstance;
 @implementation BPValidationDataManager
     @synthesize cachedValidationData;
     @synthesize cachedValidationDataExpiryTimestamp;
+    @synthesize validationDataRequestAcknowledgementTimer;
     
     + (instancetype) sharedInstance {
         if (!_sharedInstance) {
@@ -42,6 +43,17 @@ BPValidationDataManager* _sharedInstance;
             ];
         }];
         
+        // Listen for acknowledgements from IdentityServices
+        // of validation data requests
+        [NSDistributedNotificationCenter.defaultCenter
+            addObserverForName: kNotificationRequestValidationDataAcknowledgement
+            object: nil
+            queue: NSOperationQueue.mainQueue
+            usingBlock: ^(NSNotification* notification)
+        {
+            [self handleValidationDataRequestAcknowledgement];
+        }];
+        
         return self;
     }
     
@@ -67,6 +79,15 @@ BPValidationDataManager* _sharedInstance;
         
         [BPNotificationSender sendNotificationWithMessage: @"Requesting new validation data"];
         
+        // Notify the user that identityservicesd does not respond
+        // if it doesn't acknowledge the request in the next 3 seconds
+        self.validationDataRequestAcknowledgementTimer = [BPTimer
+            scheduleTimerWithTimeInterval: 3
+            completion: ^{
+                [self handleValidationDataRequestDidNotReceiveAcknowledgement];
+            }
+        ];
+        
         // Send a validation data request to IdentityServices
         [NSDistributedNotificationCenter.defaultCenter
             postNotificationName: kNotificationRequestValidationData
@@ -87,5 +108,19 @@ BPValidationDataManager* _sharedInstance;
         [BPNotificationSender sendNotificationWithMessage: @"Using cached validation data"];
         
         return cachedValidationData;
+    }
+    
+    - (void) handleValidationDataRequestAcknowledgement {
+        if (self.validationDataRequestAcknowledgementTimer) {
+            [self.validationDataRequestAcknowledgementTimer invalidate];
+            self.validationDataRequestAcknowledgementTimer = nil;
+        }
+    }
+    
+    - (void) handleValidationDataRequestDidNotReceiveAcknowledgement {
+        NSString* messageText = @"Retrieving validation data failed because identityservicesd did not respond. Try reinstalling the tweak or restarting your device. If that fails, go back to release e0477ea or earlier and report this problem until a fix is released.";
+        
+        LOG(@"%@", messageText);
+        [BPNotificationSender sendNotificationWithMessage: messageText];
     }
 @end

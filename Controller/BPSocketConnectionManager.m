@@ -2,7 +2,7 @@
 #import "BPDeviceIdentifiers.h"
 #import "BPValidationDataManager.h"
 #import "BPNotificationSender.h"
-#import "BPTimerHelper.h"
+#import "BPTimer.h"
 #import "../Shared/Constants.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
 #import "./Logging.h"
@@ -138,7 +138,7 @@ static BPSocketConnectionManager* _sharedInstance;
         
         // Retry after a delay
         
-        [BPTimerHelper
+        [BPTimer
             scheduleTimerWithTimeInterval: 5
             completion: ^{
                 [self startConnection];
@@ -357,7 +357,7 @@ static BPSocketConnectionManager* _sharedInstance;
     }
     
     - (void) startPingMessageTimer {
-        [BPTimerHelper
+        [BPTimer
             scheduleTimerWithTimeInterval: 30
             completion: ^{
                 [self handlePingTimerFired];
