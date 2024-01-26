@@ -20,8 +20,6 @@ static BPSocketConnectionManager* _sharedInstance;
     @synthesize lastIdentifiersSendTimestamp;
     @synthesize wasConnectedBefore;
     @synthesize failedConnectionAttemptCountInARow;
-    @synthesize retryTimer;
-    @synthesize pingTimer;
     
     + (instancetype) sharedInstance {
         if (!_sharedInstance) {
@@ -94,12 +92,6 @@ static BPSocketConnectionManager* _sharedInstance;
             LOG(@"Starting connection");
         }
         
-        // Not sure whether this is necessary, but better safe than sorry?
-        if (retryTimer) {
-            [retryTimer invalidate];
-            retryTimer = nil;
-        }
-        
         @try {
             NSString* relayURL = [NSString
                 stringWithContentsOfFile: relayURLFilePath
@@ -145,18 +137,13 @@ static BPSocketConnectionManager* _sharedInstance;
         [currentState updateConnected: false];
         
         // Retry after a delay
-        // (Not using a normal NSTimer because it
-        // does not always fire during sleep)
         
-        retryTimer = [BPTimerHelper
-            createTimerWithTimeInterval: 5
-            serviceIdentifier: kSuiteName
-            target: self
-            selector: @selector(startConnection)
-            userInfo: nil
+        [BPTimerHelper
+            scheduleTimerWithTimeInterval: 5
+            completion: ^{
+                [self startConnection];
+            }
         ];
-        
-        [retryTimer scheduleInRunLoop: [NSRunLoop mainRunLoop]];
     }
     
     - (void) handleReceivedMessageWithContents:(NSDictionary*)jsonContents {
@@ -365,28 +352,16 @@ static BPSocketConnectionManager* _sharedInstance;
             [self sendPingMessage];
         }
         
-        // Not sure whether this is necessary, but better safe than sorry?
-        [pingTimer invalidate];
-        
         // The timer does not repeat so we have to start a new one
         [self startPingMessageTimer];
     }
     
     - (void) startPingMessageTimer {
-        // Not using a normal NSTimer because it
-        // does not always fire during sleep
-        //
-        // Note that when setting the time interval
-        // to e.g. 60 seconds, it does not reliably
-        // get called for whatever reason
-        pingTimer = [BPTimerHelper
-            createTimerWithTimeInterval: 30
-            serviceIdentifier: kSuiteName
-            target: self
-            selector: @selector(handlePingTimerFired)
-            userInfo: nil
+        [BPTimerHelper
+            scheduleTimerWithTimeInterval: 30
+            completion: ^{
+                [self handlePingTimerFired];
+            }
         ];
-        
-        [pingTimer scheduleInRunLoop: [NSRunLoop mainRunLoop]];
     }
 @end

@@ -19,10 +19,6 @@
     // This is stored to make sure we don't spam the log file when
     // e.g. the device isn't connected to the internet
     @property int failedConnectionAttemptCountInARow;
-    // The timer responsible for retrying the connection after a delay
-    @property (retain) PCSimpleTimer* retryTimer;
-    // The timer responsible for periodically sending ping messages
-    @property (retain) PCSimpleTimer* pingTimer;
     
     + (instancetype) sharedInstance;
     
