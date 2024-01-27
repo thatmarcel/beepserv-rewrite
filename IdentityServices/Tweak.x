@@ -1,5 +1,4 @@
 #import "Tweak.h"
-#import <substrate.h>
 #import "./bp_ids_offset_utils.h"
 #import "./bp_ids_hooking_utils.h"
 #import "./bp_ids_fallback.h"
@@ -54,7 +53,6 @@ bool bp_send_cert_request_if_needed() {
         [[%c(IDSRegistrationCenter) sharedInstance]
             _sendAbsintheValidationCertRequestIfNeeded
         ];
-        
     } else if ([registrationCenter respondsToSelector: @selector(validationQueue)]) {
         IDSValidationQueue* validationQueue = [registrationCenter validationQueue];
         
@@ -100,39 +98,40 @@ void bp_start_validation_data_request() {
 %ctor {
     LOG(@"Started");
     
-    // Listen for validation data requests from
-    // the Controller (which listens for requests from the relay)
-    [NSDistributedNotificationCenter.defaultCenter
-        addObserverForName: (NSString*) kNotificationRequestValidationData
-        object: nil
-        queue: NSOperationQueue.mainQueue
-        usingBlock: ^(NSNotification* notification)
-    {
-        LOG(@"Received request for validation data");
+    // Wait a bit to make sure we don't break things
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        LOG(@"Finding offsets");
         
-        // Notify the Controller that we have received the request
+        bp_has_found_offsets = bp_find_offsets();
+        
+        if (!bp_has_found_offsets) {
+            LOG(@"Finding offsets failed");
+            
+            bp_is_using_fallback_method = true;
+        } else {
+            LOG(@"Found offsets");
+            
+            bp_setup_hooks();
+        }
+        
+        // Listen for validation data requests from
+        // the Controller (which listens for requests from the relay)
         [NSDistributedNotificationCenter.defaultCenter
-            postNotificationName: kNotificationRequestValidationDataAcknowledgement
+            addObserverForName: (NSString*) kNotificationRequestValidationData
             object: nil
-            userInfo: nil
-        ];
-        
-        bp_start_validation_data_request();
-    }];
-    
-    LOG(@"Finding offsets");
-    
-    bp_has_found_offsets = bp_find_offsets();
-    
-    if (!bp_has_found_offsets) {
-        LOG(@"Finding offsets failed");
-        
-        bp_is_using_fallback_method = true;
-    } else {
-        LOG(@"Found offsets");
-        
-        %init();
-        
-        bp_setup_hooks();
-    }
+            queue: NSOperationQueue.mainQueue
+            usingBlock: ^(NSNotification* notification)
+        {
+            LOG(@"Received request for validation data");
+            
+            // Notify the Controller that we have received the request
+            [NSDistributedNotificationCenter.defaultCenter
+                postNotificationName: kNotificationRequestValidationDataAcknowledgement
+                object: nil
+                userInfo: nil
+            ];
+            
+            bp_start_validation_data_request();
+        }];
+    });
 }

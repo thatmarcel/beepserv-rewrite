@@ -1,3 +1,4 @@
+#import <substrate.h>
 #import "bp_ids_offset_utils.h"
 #import "./Logging.h"
 
@@ -66,7 +67,7 @@ intptr_t bp_get_ref_addr() {
     return 0;
 }
 
-intptr_t bp_find_pattern_offset(const char* pattern, int pattern_length, int target_match_index, intptr_t start_offset) {
+intptr_t bp_find_pattern_offset(const char* pattern, int pattern_length, int target_match_index, intptr_t start_offset, intptr_t max_offset_from_start_offset) {
     intptr_t ref_addr = bp_get_ref_addr();
     
     intptr_t current_start_addr = ref_addr;
@@ -78,6 +79,12 @@ intptr_t bp_find_pattern_offset(const char* pattern, int pattern_length, int tar
     }
     
     unsigned long search_limit = bp_get_image_file_size() - 200;
+    
+    intptr_t max_addr = start_offset + max_offset_from_start_offset;
+    
+    if (max_offset_from_start_offset && max_addr <= search_limit) {
+        search_limit = max_addr;
+    }
     
     int match_count = 0;
     
@@ -116,7 +123,7 @@ intptr_t bp_find_pattern_offset(const char* pattern, int pattern_length, int tar
 intptr_t bp_find_nac_init_call_log_string() {
     NSString *nac_init_call_log_string_content = @"Calling NACInit with";
     
-    intptr_t niclsc_offset = bp_find_pattern_offset([nac_init_call_log_string_content UTF8String], [nac_init_call_log_string_content length], 0, 0);
+    intptr_t niclsc_offset = bp_find_pattern_offset([nac_init_call_log_string_content UTF8String], [nac_init_call_log_string_content length], 0, 0, 0);
     
     return niclsc_offset;
 }
@@ -144,7 +151,7 @@ intptr_t bp_find_nac_init_call_log_string_caller(intptr_t niclsc_offset /* e.g. 
     intptr_t prev_potential_caller_offset = 0;
     
     for (int i = 0; i < 20; i += 1) {
-        intptr_t potential_caller_offset = bp_find_pattern_offset(pattern, pattern_length, 0, prev_potential_caller_offset + 1);
+        intptr_t potential_caller_offset = bp_find_pattern_offset(pattern, pattern_length, 0, prev_potential_caller_offset + 1, 0);
         
         if (!potential_caller_offset) {
             continue;
@@ -192,7 +199,7 @@ intptr_t bp_find_nac_init_call(intptr_t niclsc_caller_offset) {
     intptr_t prev_potential_call_pre_offset = niclsc_caller_offset;
     
     for (int i = 0; i < 20; i += 1) {
-        intptr_t potential_call_pre_offset = bp_find_pattern_offset(pattern, pattern_length, 0, prev_potential_call_pre_offset + 1);
+        intptr_t potential_call_pre_offset = bp_find_pattern_offset(pattern, pattern_length, 0, prev_potential_call_pre_offset + 1, 0);
         
         if (!potential_call_pre_offset) {
             return 0;
@@ -229,6 +236,45 @@ intptr_t bp_convert_nac_init_call_offset_to_nac_init_func_offset(intptr_t nac_in
     intptr_t nac_init_func_offset = nac_init_call_offset + nac_init_call_instruction_value;
     
     return nac_init_func_offset;
+}
+
+// Returns 1 if nac_key_establishment and 2 if nac_sign
+int bp_check_if_func_is_nac_sign_or_nac_key_establishment(intptr_t func_offset) {
+    int match_count = 0;
+    
+    // We look for instructions like this: ?? 03 ?? aa
+    // These are 'mov' instructions and should exist 3 times
+    // a bit after the start of nac_key_establishment
+    // and 5 times after the start of nac_sign
+    
+    int pattern_length = 1;
+    char pattern[1] = { 0xaa };
+    
+    for (int i = 0; i < 1000; i += 1) {
+        intptr_t match_offset = bp_find_pattern_offset(pattern, pattern_length, i, func_offset, 40 * 4 /* 40 instructions max */);
+        
+        if (!match_offset) {
+            break;
+        }
+        
+        intptr_t match_instruction_b_offset = match_offset - 2;
+        
+        unsigned char match_instruction_b = *((char*) (bp_get_ref_addr() + match_instruction_b_offset));
+        
+        if (match_instruction_b != 0x03) {
+            continue;
+        }
+        
+        match_count += 1;
+    }
+    
+    if (match_count < 3 || match_count > 6) {
+        return 0; // unknown
+    } else if (match_count < 5) {
+        return 1; // nac_key_establishment
+    } else {
+        return 2; // nac_sign
+    }
 }
 
 bool bp_find_offsets() {
@@ -276,7 +322,7 @@ bool bp_find_offsets() {
     for (int i = 0; i < 20; i += 1) {
         // We're looking for a pattern beginning with the 4th byte of the first instruction of the function
         // so we substract 3 to get to the start
-        intptr_t match_offset = bp_find_pattern_offset(pattern, pattern_length, i, nac_init_func_offset_from_page) - 3;
+        intptr_t match_offset = bp_find_pattern_offset(pattern, pattern_length, i, nac_init_func_offset_from_page, 0) - 3;
         
         if (match_offset <= 0) {
             return false;
@@ -296,27 +342,34 @@ bool bp_find_offsets() {
         
         // This pattern should always be there as part of a 'cmp'
         // instruction, so make sure we're not chasing ghosts
-        int second_pattern_length = 4;
-        char second_pattern[4] = { 0x1f, 0x00, 0x00, 0xf1 };
+        int second_pattern_length = 2;
+        char second_pattern[2] = { 0x00, 0xf1 };
         
-        intptr_t second_match_offset = bp_find_pattern_offset(second_pattern, second_pattern_length, 0, match_offset);
+        intptr_t second_match_offset = bp_find_pattern_offset(second_pattern, second_pattern_length, 0, match_offset, 30 * 4 /* 30 instructions max */);
         
         if (!second_match_offset) {
             continue;
         }
         
-        // On my test devices, key establishment is always the first match,
-        // sign can be 2nd or 3rd (with the other being init).
-        // Again, this needs to be tested on more devices and if that's
-        // not always the case, we need to use another way to identify the function
-        if (!bp_nac_key_establishment_func_offset) {
-            bp_nac_key_establishment_func_offset = match_offset;
-        } else {
-            bp_nac_sign_func_offset = match_offset;
-            
-            LOG(@"nac_key_establishment offset: %p", ((void*) bp_nac_key_establishment_func_offset));
-            LOG(@"nac_sign offset: %p", ((void*) bp_nac_sign_func_offset));
-            
+        int check_result = bp_check_if_func_is_nac_sign_or_nac_key_establishment(match_offset);
+        
+        if (check_result == 1) {
+            if (!bp_nac_key_establishment_func_offset) {
+                bp_nac_key_establishment_func_offset = match_offset;
+                LOG(@"nac_key_establishment offset: %p", ((void*) bp_nac_key_establishment_func_offset));
+            } else {
+                LOG(@"Other candidate for nac_key_establishment at offset: %p", ((void*) match_offset));
+            }
+        } else if (check_result == 2) {
+            if (!bp_nac_sign_func_offset) {
+                bp_nac_sign_func_offset = match_offset;
+                LOG(@"nac_sign offset: %p", ((void*) bp_nac_sign_func_offset));
+            } else {
+                LOG(@"Other candidate for nac_sign at offset: %p", ((void*) match_offset));
+            }
+        }
+        
+        if (bp_nac_key_establishment_func_offset && bp_nac_sign_func_offset) {
             return true;
         }
     }
