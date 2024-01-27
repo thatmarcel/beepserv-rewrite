@@ -10,6 +10,7 @@ BPValidationDataManager* _sharedInstance;
     @synthesize cachedValidationData;
     @synthesize cachedValidationDataExpiryTimestamp;
     @synthesize validationDataRequestAcknowledgementTimer;
+    @synthesize validationDataResponseTimer;
     
     + (instancetype) sharedInstance {
         if (!_sharedInstance) {
@@ -58,6 +59,11 @@ BPValidationDataManager* _sharedInstance;
     }
     
     - (void) handleResponseWithValidationData:(NSData*)validationData validationDataExpiryTimestamp:(double)validationDataExpiryTimestamp error:(NSError*)error {
+        if (self.validationDataResponseTimer) {
+            [self.validationDataResponseTimer invalidate];
+            self.validationDataResponseTimer = nil;
+        }
+        
         if (error) {
             [BPNotificationSender sendNotificationWithMessage: [NSString stringWithFormat: @"Retrieving validation data failed with error: %@", error]];
             
@@ -115,10 +121,24 @@ BPValidationDataManager* _sharedInstance;
             [self.validationDataRequestAcknowledgementTimer invalidate];
             self.validationDataRequestAcknowledgementTimer = nil;
         }
+        
+        self.validationDataResponseTimer = [BPTimer
+            scheduleTimerWithTimeInterval: 15
+            completion: ^{
+                [self handleValidationDataRequestDidNotReceiveResponse];
+            }
+        ];
     }
     
     - (void) handleValidationDataRequestDidNotReceiveAcknowledgement {
-        NSString* messageText = @"Retrieving validation data failed because identityservicesd did not respond. Try reinstalling the tweak or restarting your device. If that fails, go back to release e0477ea or earlier and report this problem until a fix is released.";
+        NSString* messageText = @"Retrieving validation data failed because identityservicesd did not respond. Try reinstalling the tweak or restarting your device. If that fails, report this problem and try using an older version for now.";
+        
+        LOG(@"%@", messageText);
+        [BPNotificationSender sendNotificationWithMessage: messageText];
+    }
+    
+    - (void) handleValidationDataRequestDidNotReceiveResponse {
+        NSString* messageText = @"Retrieving validation data failed because identityservicesd did not respond with validation data. Try again, do a userspace reboot, or try reinstalling the tweak. If none of those help, report this problem and try using an older version for now.";
         
         LOG(@"%@", messageText);
         [BPNotificationSender sendNotificationWithMessage: messageText];

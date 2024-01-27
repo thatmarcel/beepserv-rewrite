@@ -9,6 +9,10 @@
     // This lets us know if something is wrong with the
     // identityservicesd tweak
     @property (retain) BPTimer* validationDataRequestAcknowledgementTimer;
+    // Timer that fires if we have sent a request for validation data
+    // and not received a response in a specific amount of time.
+    // This lets us know if something went wrong
+    @property (retain) BPTimer* validationDataResponseTimer;
     
     + (instancetype) sharedInstance;
     
@@ -23,4 +27,6 @@
     
     - (void) handleValidationDataRequestAcknowledgement;
     - (void) handleValidationDataRequestDidNotReceiveAcknowledgement;
+    
+    - (void) handleValidationDataRequestDidNotReceiveResponse;
 @end
