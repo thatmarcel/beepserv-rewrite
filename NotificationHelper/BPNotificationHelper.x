@@ -98,9 +98,9 @@ static NSObject<OS_dispatch_queue>* notificationServerQueue = nil;
             [bulletin setClearable: true];
         }
         
-        LOG(@"Dispatching in notification server queue");
+        // LOG(@"Dispatching in notification server queue");
         dispatch_sync(notificationServerQueue, ^{
-            LOG(@"Publishing notification");
+            // LOG(@"Publishing notification");
             
             if (shouldUseOtherPublishMethod) {
                 [notificationServer publishBulletin: bulletin destinations: 14 alwaysToLockScreen: false];
