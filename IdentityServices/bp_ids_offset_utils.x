@@ -16,10 +16,10 @@ intptr_t bp_nac_init_func_offset = 0;
 intptr_t bp_nac_key_establishment_func_offset = 0;
 intptr_t bp_nac_sign_func_offset = 0;
 
-unsigned long cached_image_file_size = 0;
-unsigned long get_image_file_size() {
-    if (cached_image_file_size) {
-        return cached_image_file_size;
+unsigned long bp_cached_image_file_size = 0;
+unsigned long bp_get_image_file_size() {
+    if (bp_cached_image_file_size) {
+        return bp_cached_image_file_size;
     }
     
     NSURL *image_file_url = [NSURL fileURLWithPath: @"/System/Library/PrivateFrameworks/IDS.framework/identityservicesd.app/identityservicesd"];
@@ -33,25 +33,31 @@ unsigned long get_image_file_size() {
         error: &image_file_size_retrieval_error
     ];
     
-    cached_image_file_size = [image_file_size longValue];
-    return cached_image_file_size;
+    if (image_file_size_retrieval_error) {
+        LOG(@"Reading image file size failed with error: %@", image_file_size_retrieval_error);
+        return 0;
+    }
+    
+    bp_cached_image_file_size = [image_file_size longValue];
+    return bp_cached_image_file_size;
 }
 
 intptr_t bp_cached_ref_addr = 0;
 intptr_t bp_get_ref_addr() {
     // e.g. when using palera1n with ellekit, the first dyld image
     // is libinjector.dylib so if that is the case we need to
-    // try using the second dyld image
+    // try using the second dyld image, etc.
     
     if (bp_cached_ref_addr) {
         return bp_cached_ref_addr;
     }
     
-    for (int i = 0; i < 2; i += 1) {
+    for (int i = 0; i < 5; i += 1) {
         const char* image_name = _dyld_get_image_name(i);
+        if (!image_name) { continue; }
         NSString* image_name_string = [[NSString alloc] initWithCString: image_name encoding: NSUTF8StringEncoding];
         
-        if ([image_name_string containsString: @"/identityservicesd"]) {
+        if ([image_name_string containsString: @"identityservicesd"]) {
             bp_cached_ref_addr = _dyld_get_image_vmaddr_slide(i) + 0x100000000;
             return bp_cached_ref_addr;
         }
@@ -71,7 +77,7 @@ intptr_t bp_find_pattern_offset(const char* pattern, int pattern_length, int tar
         current_start_addr += 0x000000004;
     }
     
-    unsigned long search_limit = get_image_file_size() - 200;
+    unsigned long search_limit = bp_get_image_file_size() - 200;
     
     int match_count = 0;
     
@@ -140,6 +146,10 @@ intptr_t bp_find_nac_init_call_log_string_caller(intptr_t niclsc_offset /* e.g. 
     for (int i = 0; i < 20; i += 1) {
         intptr_t potential_caller_offset = bp_find_pattern_offset(pattern, pattern_length, 0, prev_potential_caller_offset + 1);
         
+        if (!potential_caller_offset) {
+            continue;
+        }
+        
         prev_potential_caller_offset = potential_caller_offset;
         
         intptr_t previous_instruction_offset = potential_caller_offset - 4;
@@ -184,6 +194,10 @@ intptr_t bp_find_nac_init_call(intptr_t niclsc_caller_offset) {
     for (int i = 0; i < 20; i += 1) {
         intptr_t potential_call_pre_offset = bp_find_pattern_offset(pattern, pattern_length, 0, prev_potential_call_pre_offset + 1);
         
+        if (!potential_call_pre_offset) {
+            return 0;
+        }
+        
         prev_potential_call_pre_offset = potential_call_pre_offset;
         
         intptr_t potential_call_pre_instruction_d_addr = bp_get_ref_addr() + potential_call_pre_offset + 3;
@@ -218,15 +232,35 @@ intptr_t bp_convert_nac_init_call_offset_to_nac_init_func_offset(intptr_t nac_in
 }
 
 bool bp_find_offsets() {
+    if (!bp_get_image_file_size() || !bp_get_ref_addr() || bp_get_ref_addr() == 0x100000000) {
+        return false;
+    }
+    
     intptr_t niclsc_offset = bp_find_nac_init_call_log_string();
+    
+    if (!niclsc_offset) {
+        return false;
+    }
     
     intptr_t niclsc_caller_offset = bp_find_nac_init_call_log_string_caller(niclsc_offset);
     
+    if (!niclsc_caller_offset) {
+        return false;
+    }
+    
     intptr_t nac_init_call_offset = bp_find_nac_init_call(niclsc_caller_offset);
+    
+    if (!nac_init_call_offset) {
+        return false;
+    }
     
     bp_nac_init_func_offset = bp_convert_nac_init_call_offset_to_nac_init_func_offset(nac_init_call_offset);
     
     LOG(@"nac_init offset: %p", ((void*) bp_nac_init_func_offset));
+    
+    if (bp_nac_init_func_offset <= 0 || bp_nac_init_func_offset >= bp_get_image_file_size()) {
+        return false;
+    }
     
     intptr_t nac_init_func_approx_offset = bp_nac_init_func_offset & 0xFFFF00;
     
@@ -243,6 +277,10 @@ bool bp_find_offsets() {
         // We're looking for a pattern beginning with the 4th byte of the first instruction of the function
         // so we substract 3 to get to the start
         intptr_t match_offset = bp_find_pattern_offset(pattern, pattern_length, i, nac_init_func_offset_from_page) - 3;
+        
+        if (match_offset <= 0) {
+            return false;
+        }
         
         // On arm64e, we have to go back another instruction to get to the beginning of
         // the function because there's a 'pacibsp' instruction
