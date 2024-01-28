@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "SRWebSocket.h"
 #import "../Shared/BPState.h"
-#import "Headers/PCSimpleTimer.h"
 
 @interface BPSocketConnectionManager: NSObject <SRWebSocketDelegate>
     @property (retain) SRWebSocket* socket;

@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-#import "BPTimer.h"
+#import "../Shared/BPTimer.h"
 
 @interface BPValidationDataManager: NSObject
     @property (retain) NSData* cachedValidationData;

@@ -4,11 +4,22 @@
 #import "./bp_ids_fallback.h"
 #import "./Logging.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
+#import "../Shared/BPTimer.h"
 
 bool bp_has_found_offsets = false;
 bool bp_is_using_fallback_method = false;
 
+// Timer that fires if validation data has not been retrieved via
+// the newer method after a certain amount of time
+// so we can try again using the fallback method
+BPTimer* bp_validation_data_retrieval_using_newer_method_timer = nil;
+
 void bp_handle_validation_data(NSData* validationData, bool isFallbackMethod) {
+    if (bp_validation_data_retrieval_using_newer_method_timer) {
+        [bp_validation_data_retrieval_using_newer_method_timer invalidate];
+        bp_validation_data_retrieval_using_newer_method_timer = nil;
+    }
+    
     double validationDataExpiryTimestamp;
     
     if (isFallbackMethod) {
@@ -73,6 +84,18 @@ void bp_start_validation_data_request() {
         bool was_sending_cert_request_successful = bp_send_cert_request_if_needed();
         
         if (was_sending_cert_request_successful) {
+            bp_validation_data_retrieval_using_newer_method_timer = [BPTimer
+                scheduleTimerWithTimeInterval: 8
+                completion: ^{
+                    // Assume that the newer method of validation data
+                    // retrieval / generation does not currently work on this
+                    // device and try again
+                    
+                    bp_has_found_offsets = false;
+                    bp_start_validation_data_request();
+                }
+            ];
+            
             return;
         }
     }

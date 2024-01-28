@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-#import "Headers/PCSimpleTimer.h"
+#import "./PCSimpleTimer.h"
 
 typedef void (^BPTimerCompletionBlock)(void);
 

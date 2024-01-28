@@ -2,7 +2,7 @@
 #import "BPDeviceIdentifiers.h"
 #import "BPValidationDataManager.h"
 #import "BPNotificationSender.h"
-#import "BPTimer.h"
+#import "../Shared/BPTimer.h"
 #import "../Shared/Constants.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
 #import "./Logging.h"

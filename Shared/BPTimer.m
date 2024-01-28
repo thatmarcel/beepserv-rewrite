@@ -1,5 +1,5 @@
-#import "BPTimer.h"
-#import "../Shared/Constants.h"
+#import "./BPTimer.h"
+#import "./Constants.h"
 
 // This class schedules an NSTimer, PCSimpleTimer
 // and runs dispatch_after because
@@ -22,7 +22,7 @@
 		
 		self.completionBlock = completion;
 		
-		pcSimpleTimer = [[%c(PCSimpleTimer) alloc]
+		pcSimpleTimer = [[NSClassFromString(@"PCSimpleTimer") alloc]
 			initWithTimeInterval: timeInterval
 			serviceIdentifier: kSuiteName
 			target: self
