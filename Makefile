@@ -20,10 +20,14 @@ SUBPROJECTS += Application
 
 include $(THEOS_MAKE_PATH)/aggregate.mk
 
-# try to apply the patch that will make it work. If it exits with non-zero, that just means
-# the patch is already applied, so we can safely ignore it with `|| :`
+# try to apply the patches that will make it work. If it exits with non-zero, that just means
+# the patches are already applied, so we can safely ignore it with `|| :`
+#
+# The version of libroot included with Theos is not compatible
+# with the arm64e ABI we use so we have to compile it ourselves
 before-all::
 	cd SocketRocket && git apply -q ../SocketRocket.patch || :
+	cd libroot && git apply -q ../libroot.patch || :
 
 after-install::
 		install.exec "uicache -a"
