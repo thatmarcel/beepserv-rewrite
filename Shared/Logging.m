@@ -123,8 +123,8 @@ void bp_log_impl_internal(NSString* moduleName, NSString* logString, bool should
     
     NSFileManager* fileManager = NSFileManager.defaultManager;
     
-    if (![fileManager fileExistsAtPath: kLogFilePath]) {
-        [fileManager createFileAtPath: kLogFilePath contents: nil attributes: nil];
+    if (![fileManager fileExistsAtPath: LOG_FILE_PATH]) {
+        [fileManager createFileAtPath: LOG_FILE_PATH contents: nil attributes: nil];
     }
     
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
@@ -133,7 +133,7 @@ void bp_log_impl_internal(NSString* moduleName, NSString* logString, bool should
     
     logString = bp_replace_secrets_in_log_string(logString);
     
-    NSFileHandle* fileHandle = [NSFileHandle fileHandleForWritingAtPath: kLogFilePath];
+    NSFileHandle* fileHandle = [NSFileHandle fileHandleForWritingAtPath: LOG_FILE_PATH];
     [fileHandle seekToEndOfFile];
     [fileHandle writeData: [[NSString stringWithFormat: @"%@: [%@] %@\n", dateString, moduleName, [logString stringByReplacingOccurrencesOfString: @"\n" withString: @" "]] dataUsingEncoding: NSUTF8StringEncoding]];
     [fileHandle closeFile];

@@ -6,10 +6,10 @@
 #import "../Shared/Constants.h"
 #import "../Shared/NSDistributedNotificationCenter.h"
 #import "./Logging.h"
-#import <rootless.h>
+#import "../libroot/src/libroot.h"
 
-static NSString* relayURLFilePath = ROOT_PATH_NS(@"/var/mobile/.beepserv_relay_url");
-static NSString* alternativeRelayURLFilePath = ROOT_PATH_NS(@"/.beepserv_wsurl");
+#define RELAY_URL_FILE_PATH JBROOT_PATH_NSSTRING(@"/var/mobile/.beepserv_relay_url")
+#define ALTERNATIVE_RELAY_URL_FILE_PATH JBROOT_PATH_NSSTRING(@"/.beepserv_wsurl")
 
 static BPSocketConnectionManager* _sharedInstance;
 
@@ -94,11 +94,11 @@ static BPSocketConnectionManager* _sharedInstance;
         
         @try {
             NSString* relayURL = [NSString
-                stringWithContentsOfFile: relayURLFilePath
+                stringWithContentsOfFile: RELAY_URL_FILE_PATH
                 encoding: NSUTF8StringEncoding
                 error: nil
             ] ?: [NSString
-                stringWithContentsOfFile: alternativeRelayURLFilePath
+                stringWithContentsOfFile: ALTERNATIVE_RELAY_URL_FILE_PATH
                 encoding: NSUTF8StringEncoding
                 error: nil
             ] ?: kDefaultRelayURL;

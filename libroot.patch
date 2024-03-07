@@ -1,0 +1,12 @@
+diff --git a/src/dyn.c b/src/dyn.c
+index 89b4b70..e80a243 100644
+--- a/src/dyn.c
++++ b/src/dyn.c
+@@ -4,6 +4,7 @@
+ #include <dlfcn.h>
+ #include <sys/param.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include "libroot.h"
+ 
+ static const char *(*dyn_get_root_prefix)(void) = NULL;

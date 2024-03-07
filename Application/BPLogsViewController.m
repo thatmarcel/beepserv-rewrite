@@ -78,7 +78,7 @@
     - (void) readLogsWithCompletion:(void (^)(BOOL))completion {
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
             NSString* logFileContent = [[NSString
-                stringWithContentsOfFile: kLogFilePath encoding: NSUTF8StringEncoding error: nil] 
+                stringWithContentsOfFile: LOG_FILE_PATH encoding: NSUTF8StringEncoding error: nil] 
                 stringByTrimmingCharactersInSet: [NSCharacterSet newlineCharacterSet]
             ];
             
@@ -151,7 +151,7 @@
     
     - (void) handleClearLogsButtonPressed {
         NSError* fileDeletionError;
-        [NSFileManager.defaultManager removeItemAtPath: kLogFilePath error: &fileDeletionError];
+        [NSFileManager.defaultManager removeItemAtPath: LOG_FILE_PATH error: &fileDeletionError];
         
         if (fileDeletionError) {
             LOG(@"Deleting log file failed");
@@ -162,7 +162,7 @@
     
     - (void) handleShareButtonPressed {
         UIActivityViewController* activityViewController = [[UIActivityViewController alloc]
-            initWithActivityItems: @[[NSURL fileURLWithPath: kLogFilePath]]
+            initWithActivityItems: @[[NSURL fileURLWithPath: LOG_FILE_PATH]]
             applicationActivities: nil
         ];
         

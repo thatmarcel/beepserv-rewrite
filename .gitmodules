@@ -1,3 +1,6 @@
 [submodule "SocketRocket"]
 	path = SocketRocket
 	url = https://github.com/facebookincubator/SocketRocket
+[submodule "libroot"]
+	path = libroot
+	url = https://github.com/opa334/libroot

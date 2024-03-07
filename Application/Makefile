@@ -17,7 +17,7 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = BeepservApplication
 
-$(APPLICATION_NAME)_FILES = $(wildcard *.m) ../Shared/BPState.m ../Shared/Logging.m ../Shared/BPPrefs.m
+$(APPLICATION_NAME)_FILES = $(wildcard *.m) ../Shared/BPState.m ../Shared/Logging.m ../Shared/BPPrefs.m ../libroot/src/dyn.c
 $(APPLICATION_NAME)_FRAMEWORKS = UIKit CoreGraphics
 $(APPLICATION_NAME)_CFLAGS = -fobjc-arc
 

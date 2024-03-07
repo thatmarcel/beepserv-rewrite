@@ -2,7 +2,7 @@
 #import "./Constants.h"
 #import "./NSDistributedNotificationCenter.h"
 
-#import <rootless.h>
+#import "../libroot/src/libroot.h"
 
 // Because this file is shared between modules, we cannot use the
 // module-specific logging files
@@ -10,8 +10,8 @@
 #define LOG(...) bp_log_impl(@"Shared", [NSString stringWithFormat: __VA_ARGS__])
 void bp_log_impl(NSString* moduleName, NSString* logString);
 
-static NSString* stateFilePath = ROOT_PATH_NS(@"/var/mobile/.beepserv_state");
-static NSString* alternativeStateFilePath = ROOT_PATH_NS(@"/var/mobile/Library/.beepserv_state");
+#define STATE_FILE_PATH JBROOT_PATH_NSSTRING(@"/var/mobile/.beepserv_state")
+#define ALTERNATIVE_STATE_FILE_PATH JBROOT_PATH_NSSTRING(@"/var/mobile/Library/.beepserv_state")
 
 static const NSString* kSerializationKeyCode = @"com.beepserv.code";
 static const NSString* kSerializationKeySecret = @"com.beepserv.secret";
@@ -27,11 +27,11 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
         
         // As SpringBoard should have r/w permissions for the normal file path on all setups,
         // the alternative file is not needed anymore, so we'll delete it
-        if ([NSFileManager.defaultManager fileExistsAtPath: alternativeStateFilePath isDirectory: nil]) {
+        if ([NSFileManager.defaultManager fileExistsAtPath: ALTERNATIVE_STATE_FILE_PATH isDirectory: nil]) {
             LOG(@"Found alternative state file");
             
             NSError* fileReadingError;
-            NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", alternativeStateFilePath]];
+            NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", ALTERNATIVE_STATE_FILE_PATH]];
             
             NSDictionary* serializedState;
             
@@ -45,7 +45,7 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
                 LOG(@"Reading alternative state file failed with error: %@", fileReadingError);
             } else {
                 NSError* fileDeletionError;
-                [NSFileManager.defaultManager removeItemAtPath: alternativeStateFilePath error: &fileDeletionError];
+                [NSFileManager.defaultManager removeItemAtPath: ALTERNATIVE_STATE_FILE_PATH error: &fileDeletionError];
                 
                 if (fileDeletionError) {
                     LOG(@"Deleting alternative state file failed with error: %@", fileReadingError);
@@ -55,11 +55,11 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
             }
         }
         
-        if ([NSFileManager.defaultManager fileExistsAtPath: stateFilePath isDirectory: nil]) {
+        if ([NSFileManager.defaultManager fileExistsAtPath: STATE_FILE_PATH isDirectory: nil]) {
             LOG(@"Found state file");
             
             NSError* fileReadingError;
-            NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", stateFilePath]];
+            NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", STATE_FILE_PATH]];
             
             NSDictionary* serializedState;
             
@@ -114,7 +114,7 @@ static const NSString* kSerializationKeyConnected = @"com.beepserv.connected";
         NSDictionary* serializedState = [self serializeToDictionary];
         
         NSError* writingError;
-        NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", stateFilePath]];
+        NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", STATE_FILE_PATH]];
         
         if (@available(iOS 11, *)) {
             [serializedState writeToURL: url error: &writingError];

@@ -9,7 +9,7 @@ void bp_log_impl(NSString* moduleName, NSString* logString);
 
 @implementation BPPrefs
     + (BOOL) shouldShowNotifications {
-        NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", kPrefsFilePath]];
+        NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", PREFS_FILE_PATH]];
         
         NSDictionary* prefsDict;
         
@@ -26,7 +26,7 @@ void bp_log_impl(NSString* moduleName, NSString* logString);
     
     + (void) setShouldShowNotifications:(BOOL)shouldShowNotificationsFromNowOn {
         NSError* writingError;
-        NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", kPrefsFilePath]];
+        NSURL* url = [NSURL URLWithString: [NSString stringWithFormat: @"file://%@", PREFS_FILE_PATH]];
         NSDictionary* prefsDict = @{
             kPrefsKeyShouldShowNotifications: [NSNumber numberWithBool: shouldShowNotificationsFromNowOn]
         };

@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
-#import <rootless.h>
+#import "../libroot/src/libroot.h"
 
 static NSString* kSuiteName = @"com.beeper.beepserv";
 
-static NSString* kLogFilePath = ROOT_PATH_NS(@"/var/mobile/beepserv.log");
+#define LOG_FILE_PATH JBROOT_PATH_NSSTRING(@"/var/mobile/beepserv.log")
 
 static NSString* kModuleNameApplication = @"Application";
 static NSString* kModuleNameController = @"Controller";
@@ -46,6 +46,6 @@ static const NSString* kNotificationSendNotificationBulletin = @"com.beeper.beep
 static const NSString* kNotificationSpringBoardRestarted = @"com.beeper.beepserv/springBoardRestarted";
 static const NSString* kNotificationLogEntryFromIdentityServices = @"com.beeper.beepserv/logEntryFromIdentityServices";
 
-static const NSString* kPrefsFilePath = ROOT_PATH_NS(@"/var/mobile/.beepserv_prefs");
+#define PREFS_FILE_PATH JBROOT_PATH_NSSTRING(@"/var/mobile/.beepserv_prefs")
 
 static const NSString* kPrefsKeyShouldShowNotifications = @"shouldShowNotifications";
