@@ -4,6 +4,10 @@ A tweak for jailbroken iPhones that can be connected with Beeper Mini to provide
 ## Note
 This is a rewrite of the original [beepserv](https://github.com/beeper/phone-registration-provider) with some code from the original.
 
+There is also [JJTech's ValidationRelay](https://github.com/JJTech0130/ValidationRelay) now which allows you to use non-jailbroken iOS devices and can be more reliable if you're having issues with this tweak.
+
+Joshua Higgins' blog has a [great guide](https://joshuafhiggins.github.io/post/the-ultimate-beeper-guide-2024/) on how to get iMessage working with Beeper.
+
 The tweak is now split into 4 parts:
 - **Application**: An app that shows the registration code, logs, and allows state notifications to be turned on or off
 - **Controller**: A launch daemon that manages basically everything, including the relay connection
